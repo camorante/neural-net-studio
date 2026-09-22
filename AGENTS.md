@@ -38,7 +38,9 @@ pip install -r requirements.txt
 | Syntax check everything | `.\.venv\Scripts\python.exe -c "import ast,pathlib;[ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('nnstudio').rglob('*.py')]"` |
 | Import check | `.\.venv\Scripts\python.exe -c "import main"` |
 
-There is no git repository here and no CI. Do not assume either.
+The repository is at https://github.com/camorante/neural-net-studio, on
+`main`. There is no CI, so `python tests/run_all.py` before a commit is the
+whole safety net.
 
 ---
 
@@ -65,22 +67,23 @@ The two halves meet in exactly one place: `ui/workers.py`, which wraps a plain
 | You are adding… | It belongs in |
 |---|---|
 | A dataset source, encoding or split rule | `core/dataset.py` (tabular) or `core/vision.py` (images) |
-| A layer type, activation or output head | `core/model_builder.py` (dense), `core/resnet.py` (conv) or `core/autoencoder.py` (AE) |
-| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py`, `core/autoencoder_trainer.py` |
-| A control the user touches | the matching stage panel in `ui/`, `ui/vision/` or `ui/autoencoder/` |
+| A layer type, activation or output head | `core/model_builder.py` (dense), `core/resnet.py` (conv), `core/autoencoder.py` (AE) or `core/sequences.py` (RNN) |
+| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py`, `core/autoencoder_trainer.py`, `core/sequence_trainer.py` |
+| A control the user touches | the matching stage panel in `ui/`, `ui/vision/`, `ui/autoencoder/` or `ui/sequences/` |
 | An image source shared by both image workspaces | `ui/image_source.py` |
-| Orchestration between stages | `ui/dense_workspace.py`, `ui/vision_workspace.py` or `ui/autoencoder_workspace.py` |
+| Orchestration between stages | `ui/dense_workspace.py`, `ui/vision_workspace.py`, `ui/autoencoder_workspace.py` or `ui/sequence_workspace.py` |
 | A background job | a `QThread` in `ui/workers.py` — never inline |
-| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/autoencoder_canvas.py`, `ui/image_grid.py`, `ui/pair_grid.py`, `ui/plots.py` |
+| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/autoencoder_canvas.py`, `ui/sequence_canvas.py`, `ui/image_grid.py`, `ui/pair_grid.py`, `ui/series_plot.py`, `ui/plots.py` |
 | A colour or a widget style | `ui/theme.py` only. No inline stylesheets in panels. |
 
-The three workspaces are deliberately independent. `DenseWorkspace`,
-`VisionWorkspace` and `AutoencoderWorkspace` share the theme, the plotting
-widgets and — between the two image workspaces — `ui/image_source.py`, and
-nothing else. No shared model, no shared dataset, no shared worker, no
-workspace importing from another workspace's panel folder. A convolutional
-network is not a later stage of a dense one, and an autoencoder is not a later
-stage of either. Keep it that way.
+The four workspaces are deliberately independent. `DenseWorkspace`,
+`VisionWorkspace`, `AutoencoderWorkspace` and `SequenceWorkspace` share the
+theme, the plotting widgets and — between the two image workspaces —
+`ui/image_source.py`, and nothing else. No shared model, no shared dataset, no
+shared worker, no workspace importing from another workspace's panel folder. A
+convolutional network is not a later stage of a dense one, an autoencoder is not
+a later stage of either, and a recurrent network answers a question none of them
+ask. Keep it that way.
 
 `ui/image_source.py` is the one piece of genuinely shared stage-1 machinery.
 It lives at the top of `ui/` rather than inside `ui/vision/` precisely so that
@@ -95,7 +98,7 @@ kind of network will consume the images.
 ## Invariants — do not break these
 
 Each of these was either a bug that shipped, or a shortcut that would have
-taught something false. There are fourteen.
+taught something false. There are sixteen.
 
 ### 1. Preprocessing is fit on training rows only
 
@@ -250,6 +253,46 @@ learning. Arms that finish within `MEANINGFUL_GAIN` (15%) of each other are
 reported as *not separated*, never as a win. This invariant exists because the
 first version of this formatter did claim a win from a 2-epoch sweep.
 
+
+### 15. A sequence result is not reported until order has been questioned
+
+The sequence workspace exists for one measurement: `OrderProbeRun` trains the
+same model twice, the second time with every sequence's timesteps permuted
+independently. If the two arms score the same, order carried nothing and a
+recurrent layer is cost with no return.
+
+Two rules follow, and both are enforced in `format_order_probe()`:
+
+- The permutation is **per sequence**, never one shared permutation. A single
+  shared permutation only relabels time, and anything learnable before is
+  learnable after — the probe would measure nothing and say something.
+- When **neither** arm beats the floor, the probe reports no conclusion. Two
+  models that failed equally have not demonstrated that order is irrelevant.
+
+Do not add a claim about order anywhere that is not backed by this probe. In
+particular, a Dense arm matching an LSTM does **not** show that order is
+irrelevant: a Dense net on a fixed window gets one input per timestep and can
+compare any two of them. Measured here, it reached 0.99 on the order task doing
+exactly that. What it cannot do is share anything it learns between positions,
+or survive a change of window length.
+
+### 16. Every sequence task carries its own give-up floor, and the direction changes
+
+Forecasting is floored by **persistence** (answer that the next value equals the
+last one seen) and lower is better. Classification is floored by the **majority
+class** and higher is better. `baseline()` returns `better_is_lower` for exactly
+this reason, and every comparison must read it rather than assuming a direction.
+
+The forecast chart must always draw persistence beside the model. A prediction
+plotted alone against the truth is the most flattering picture in this subject:
+a curve that merely repeats the previous value tracks the target almost
+perfectly by eye and is worth nothing.
+
+The random-walk task is floored **permanently** — persistence is provably
+optimal there, so "train for longer" is the wrong advice and `format_sweep()`
+special-cases it. A model that appears to beat persistence on a random walk
+found noise in the validation split, and the readout says so.
+
 ---
 
 ## How to verify a change
@@ -364,6 +407,14 @@ defaults or the model code, re-measure before editing the claims.
 | The same, latent 64 | **ROC AUC 0.453 +/- 0.104** over 6 seeds (0.336 … 0.611) — below a coin flip on 4 of 6 |
 | Latent 8 beats latent 64 as a detector | **6 of 6 seeds**, mean AUC gap +0.265 +/- 0.099 |
 | Representative single run (seed 7, the median) | latent 8: familiar 0.01864, held-out 0.02254, 1.21x, AUC 0.726 |
+| Sine wave, 1200 windows of 24, 20 epochs, 32 units | persistence 0.13906; LSTM **0.00339**, GRU 0.00372, Dense 0.00362, Conv1D 0.00742 |
+| The same sine, timesteps shuffled | 0.00339 -> **0.52884** — 156x worse, so order was nearly all of it |
+| Random walk, same settings | persistence **0.00242**; LSTM 0.00494, GRU 0.00321, Dense 0.01209 — nothing beats it, ever |
+| Which spike came first, same settings | majority 0.500; LSTM **1.000**, GRU 1.000, Dense 0.990, Conv1D 0.800 |
+| The same task, timesteps shuffled | 1.000 -> **0.513** — chance. The answer lived entirely in the order |
+| More ups than downs, same settings | majority 0.447; LSTM 1.000, Dense **0.990 with 866 weights against 4,418** |
+| The same task, timesteps shuffled | 1.000 -> **0.990** — order carried nothing at all |
+| Sequence cost on CPU | 4-arm sweep **18s**, 2-arm order probe **12s** at 20 epochs |
 
 The 50-layer row is the important one, and the diagnostic is **training**
 accuracy: a deep plain stack that cannot fit its own training data is failing
@@ -406,13 +457,13 @@ reading one run sees it too.
 
 Honest list, roughly by value:
 
-1. **Test coverage is autoencoder-heavy.** `tests/` exists now (six suites, see
-   `tests/README.md`), but four of the six are about the autoencoder. The dense
-   and convolutional workspaces get one shared regression suite that only proves
-   they still train. Nothing covers k-fold cross-validation, the preprocessing
-   leak it was written to fix, dataset loading from CSV/Excel, or the ResNet50
-   transfer path — that last one needs a 98 MB download, so it may be better as
-   an opt-in suite than a default one.
+1. **Test coverage is lopsided.** `tests/` has eight suites (see
+   `tests/README.md`), but six of them cover the autoencoder and the sequences.
+   The dense and convolutional workspaces share one regression suite that only
+   proves they still train. Nothing covers k-fold cross-validation, the
+   preprocessing leak it was written to fix, dataset loading from CSV/Excel, or
+   the ResNet50 transfer path — that last one needs a 98 MB download, so it may
+   be better as an opt-in suite than a default one.
 2. **No decision-boundary plot** for the 2D datasets (two moons, circles).
    It would make the "you need hidden layers" lesson visual instead of numeric.
 3. **No gradient-boosting baseline** next to the dense network. Measurements

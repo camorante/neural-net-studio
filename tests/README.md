@@ -1,6 +1,6 @@
 # Tests
 
-Six suites. Run them all:
+Eight suites. Run them all:
 
 ```bash
 python tests/run_all.py
@@ -20,11 +20,13 @@ Or one by name: `python tests/run_all.py judge_gui`, or just
 | `test_autoencoder_guards.py` | ~30s | The readout refuses to claim a lesson it did not measure |
 | `test_autoencoder_core.py` | ~17s | Validation, geometry, both variants, a real run, anomalies, the sweep |
 | `test_judge_core.py` | ~22s | `load_single_image` + `judge_image` + `format_judgement` |
+| `test_sequence_core.py` | ~27s | The four sequence tasks, their floors, and the order probe |
 | `test_workspaces_regression.py` | ~15s | Dense and convolutional still train after shared-code changes |
 | `test_judge_gui.py` | ~25s | The Choose/Judge buttons, end to end |
 | `test_autoencoder_gui.py` | ~38s | The whole autoencoder workspace, through its real widgets |
+| `test_sequence_gui.py` | ~46s | The whole sequence workspace, including both probe verdicts |
 
-About two and a half minutes for the lot, on CPU.
+About three and a half minutes for the lot, on CPU.
 
 ## Why these are scripts and not pytest
 
@@ -45,6 +47,11 @@ ranged 0.604 to 0.836, and the same hand-drawn circle landed anywhere between
 the 28th and the 78th percentile across four seeds. So the suites assert what
 survives a reseed — stripes and solid white above the 95th percentile, latent 8
 detecting better than latent 64 — and never a third decimal.
+
+The sequence suites follow the same rule. They assert the *verdict* the probe
+reaches (`ORDER MATTERS HERE` on the spike task, `ORDER CARRIED NOTHING` on the
+counting one) and that a random walk is never beaten, because those survive a
+reseed. They never assert a particular accuracy.
 
 ## Conventions
 

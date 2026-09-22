@@ -55,10 +55,10 @@ def pump(worker, timeout_ms=600_000):
     app.processEvents()
 
 
-print("=== 1. the shell has three workspaces ===")
+print("=== 1. the autoencoder sits in its own workspace ===")
 titles = [win.workspaces.tabText(i) for i in range(win.workspaces.count())]
 print("  tabs:", titles)
-assert len(titles) == 3 and "Autoencoder" in titles[2]
+assert "Autoencoder" in titles[AUTOENCODER]
 stages = [ws.tabs.tabText(i) for i in range(ws.tabs.count())]
 print("  stages:", stages)
 assert stages == ["1. Images", "2. Architecture", "3. Training", "4. Reconstruct"]
@@ -308,7 +308,7 @@ assert not ws.reconstruct_panel.reconstruct_button.isEnabled()
 assert not ws.reconstruct_panel.anomaly_button.isEnabled()
 
 print()
-print("=== 14. the other two workspaces still work ===")
+print("=== 14. the other workspaces still work ===")
 win.workspaces.setCurrentIndex(0); app.processEvents()
 print("  dense stages :", [win.dense.tabs.tabText(i)
                            for i in range(win.dense.tabs.count())])

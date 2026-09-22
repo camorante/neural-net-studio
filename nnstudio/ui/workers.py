@@ -11,6 +11,12 @@ from ..core.autoencoder_trainer import (
     LatentSweepRun,
 )
 from ..core.crossval import CrossValRequest, CrossValRun
+from ..core.sequence_trainer import (
+    ArchSweepRun,
+    OrderProbeRun,
+    SequenceRequest,
+    SequenceRun,
+)
 from ..core.trainer import TrainingRequest, TrainingRun
 from ..core.vision import BuildCancelled, ImageBundle
 from ..core.vision_trainer import SkipComparisonRun, VisionRequest, VisionRun
@@ -201,6 +207,89 @@ class SkipComparisonWorker(QThread):
     def __init__(self, request: VisionRequest, parent=None):
         super().__init__(parent)
         self._run = SkipComparisonRun(
+            request,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+            on_arm_done=lambda label, outcome: self.arm_done.emit(label, outcome),
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class SequenceWorker(QThread):
+    """Trains one sequence model off the GUI thread."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: SequenceRequest, parent=None):
+        super().__init__(parent)
+        self._run = SequenceRun(
+            request,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class ArchSweepWorker(QThread):
+    """Trains the same task through several architectures, back to back."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    arm_done = pyqtSignal(str, dict)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: SequenceRequest, kinds=None, parent=None):
+        super().__init__(parent)
+        self._run = ArchSweepRun(
+            request,
+            kinds,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+            on_arm_done=lambda label, outcome: self.arm_done.emit(label, outcome),
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class OrderProbeWorker(QThread):
+    """Trains the same model on the real order and on shuffled timesteps."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    arm_done = pyqtSignal(str, dict)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: SequenceRequest, parent=None):
+        super().__init__(parent)
+        self._run = OrderProbeRun(
             request,
             on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
             on_message=self.message.emit,

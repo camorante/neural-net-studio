@@ -423,7 +423,7 @@
     <p class="toc-title">Contenido</p>
     <ol>
       <li><a href="#empezar"><span class="num">1</span>Antes de empezar</a></li>
-      <li><a href="#dos-mundos"><span class="num">2</span>Los tres mundos</a></li>
+      <li><a href="#dos-mundos"><span class="num">2</span>Los cuatro mundos</a></li>
       <li>
         <a href="#conceptos"><span class="num">3</span>Conceptos básicos</a>
         <ol class="sub">
@@ -472,8 +472,20 @@
           <li><a href="#ae-anomalias">Detectar anomalías</a></li>
         </ul>
       </li>
-      <li><a href="#experimentos"><span class="num">8</span>Experimentos</a></li>
-      <li><a href="#glosario"><span class="num">9</span>Glosario</a></li>
+      <li>
+        <a href="#secuencias"><span class="num">8</span>Secuencias</a>
+        <ul>
+          <li><a href="#seq-pregunta">La pregunta que nadie hace</a></li>
+          <li><a href="#seq-ventana">La ventana deslizante</a></li>
+          <li><a href="#seq-persistencia">El piso: persistencia</a></li>
+          <li><a href="#seq-memoria">Las cinco arquitecturas</a></li>
+          <li><a href="#seq-sonda">La sonda de barajado</a></li>
+          <li><a href="#seq-tareas">Las cuatro tareas</a></li>
+          <li><a href="#seq-etapas">Las cuatro etapas</a></li>
+        </ul>
+      </li>
+      <li><a href="#experimentos"><span class="num">9</span>Experimentos</a></li>
+      <li><a href="#glosario"><span class="num">10</span>Glosario</a></li>
     </ol>
   </nav>
 
@@ -540,16 +552,17 @@ pip install -r requirements.txt</pre>
 
     <!-- ============================================================ 2 -->
     <section id="dos-mundos">
-      <h2><span class="chapter">02</span>Los tres mundos: NN, CNN y Autoencoder</h2>
+      <h2><span class="chapter">02</span>Los cuatro mundos: NN, CNN, Autoencoder y Secuencias</h2>
       <p class="section-lede">
-        Al abrir la app ves tres pestañas grandes arriba. No son tres pasos.
-        Son tres caminos distintos, y elegís uno.
+        Al abrir la app ves cuatro pestañas grandes arriba. No son cuatro pasos.
+        Son cuatro caminos distintos, y elegís uno.
       </p>
 
       <div class="pill-row">
         <span class="pill on">Dense network (NN)</span>
         <span class="pill on">Convolutional (CNN)</span>
         <span class="pill on">Autoencoder (no labels)</span>
+        <span class="pill on">Sequences (RNN)</span>
       </div>
 
       <p>
@@ -692,8 +705,24 @@ pip install -r requirements.txt</pre>
           querés ver qué puede aprender una red <strong>sin que nadie le diga nada</strong>.
           No hay etiquetas, no hay respuestas correctas, no hay accuracy. Le das una
           imagen y le pedís que te la devuelva a través de una capa demasiado chica para
-          que pase entera. Es el
-          <a href="#autoencoder">capítulo 7</a>, y es el más distinto de los tres.
+          que pase entera. Es el <a href="#autoencoder">capítulo 7</a>.
+        </p>
+      </div>
+
+      <p>
+        Y queda una cuarta, que no se diferencia ni por la forma de los datos ni por
+        quién sabe la respuesta, sino por algo que en las otras tres no existe:
+        <strong>el orden</strong>. En una planilla da igual si la fila 3 viene antes que
+        la 7. En una serie de tiempo no da igual en absoluto.
+      </p>
+
+      <div class="card">
+        <h4>Usá Sequences (RNN) si…</h4>
+        <p>
+          tus datos vienen <strong>uno detrás de otro y el orden significa algo</strong>:
+          una serie de precios, una frase, mediciones en el tiempo. Pero ojo, porque esa
+          es exactamente la suposición que el <a href="#secuencias">capítulo 8</a> te va
+          a enseñar a <em>medir</em> en lugar de dar por sentada.
         </p>
       </div>
     </section>
@@ -2200,8 +2229,306 @@ pip install -r requirements.txt</pre>
     </section>
 
     <!-- ============================================================ 8 -->
+    <section id="secuencias">
+      <h2><span class="chapter">08</span>Secuencias: ¿de verdad importa el orden?</h2>
+      <p class="section-lede">
+        Este workspace existe para una pregunta que casi nadie hace antes de usar un
+        LSTM. No es «¿cuál anda mejor?». Es «¿el orden de mis datos <em>dice</em> algo?».
+      </p>
+
+      <h3 id="seq-pregunta">La pregunta que nadie hace</h3>
+      <p>
+        Cuando alguien ve datos que llegan en el tiempo, la reacción automática es
+        buscar una red con memoria. Y a veces está perfecto. Pero la memoria cuesta:
+        en las mediciones de esta app, un LSTM usó <strong>4.385 pesos</strong> donde una
+        red densa común usó <strong>833</strong> para el mismo problema. Si el orden no
+        aportaba nada, eso es cinco veces más costo por exactamente cero.
+      </p>
+      <p>
+        Lo lindo es que no hay que adivinarlo. Se puede <strong>medir</strong>, y el
+        experimento es tan simple que da un poco de vergüenza que no sea lo primero que
+        enseñan: entrená el mismo modelo dos veces, y la segunda vez barajá los pasos.
+      </p>
+
+      <h3 id="seq-ventana">La ventana deslizante</h3>
+      <p>
+        Una red no recibe «una serie». Recibe <strong>ventanas</strong>: un pedacito de
+        largo fijo, y la respuesta correcta es el paso que viene justo después. Después
+        la ventana se corre un lugar y se arma el siguiente ejemplo.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 260" role="img" aria-label="Una serie de puntos en el tiempo. Un recuadro marca los primeros ocho puntos como la ventana de entrada y una flecha señala el noveno punto como la respuesta correcta. Debajo, el mismo recuadro corrido un lugar a la derecha forma el segundo ejemplo. Al fondo, una linea vertical separa la parte de entrenamiento de la de validacion, que es siempre la cola de la serie">
+          <defs>
+            <marker id="arSq1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <text x="0" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">EJEMPLO 1</text>
+
+          <rect x="16" y="30" width="248" height="52" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect>
+          <text x="140" y="24" font-size="11" text-anchor="middle" fill="var(--accent)">ventana: lo que ve</text>
+
+          <circle cx="42" cy="66" r="4.5" fill="var(--data)"></circle>
+          <circle cx="74" cy="58" r="4.5" fill="var(--data)"></circle>
+          <circle cx="106" cy="48" r="4.5" fill="var(--data)"></circle>
+          <circle cx="138" cy="44" r="4.5" fill="var(--data)"></circle>
+          <circle cx="170" cy="48" r="4.5" fill="var(--data)"></circle>
+          <circle cx="202" cy="58" r="4.5" fill="var(--data)"></circle>
+          <circle cx="234" cy="68" r="4.5" fill="var(--data)"></circle>
+          <circle cx="266" cy="74" r="4.5" fill="var(--data)"></circle>
+
+          <line x1="276" y1="74" x2="300" y2="80" stroke="var(--out)" stroke-width="1.6" marker-end="url(#arSq1)"></line>
+          <circle cx="312" cy="82" r="6" fill="var(--out)"></circle>
+          <text x="326" y="86" font-size="11.5" fill="var(--out)">la respuesta correcta</text>
+
+          <text x="0" y="128" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">EJEMPLO 2 &#8212; la ventana se corrio UN paso</text>
+
+          <rect x="48" y="144" width="248" height="52" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="5 4"></rect>
+
+          <circle cx="42" cy="180" r="4.5" fill="currentColor" opacity="0.25"></circle>
+          <circle cx="74" cy="172" r="4.5" fill="var(--data)"></circle>
+          <circle cx="106" cy="162" r="4.5" fill="var(--data)"></circle>
+          <circle cx="138" cy="158" r="4.5" fill="var(--data)"></circle>
+          <circle cx="170" cy="162" r="4.5" fill="var(--data)"></circle>
+          <circle cx="202" cy="172" r="4.5" fill="var(--data)"></circle>
+          <circle cx="234" cy="182" r="4.5" fill="var(--data)"></circle>
+          <circle cx="266" cy="188" r="4.5" fill="var(--data)"></circle>
+          <circle cx="298" cy="190" r="4.5" fill="var(--data)"></circle>
+
+          <line x1="308" y1="190" x2="332" y2="194" stroke="var(--out)" stroke-width="1.6" marker-end="url(#arSq1)"></line>
+          <circle cx="344" cy="196" r="6" fill="var(--out)"></circle>
+
+          <line x1="470" y1="120" x2="470" y2="240" stroke="var(--bad)" stroke-width="1.6" stroke-dasharray="6 4"></line>
+          <text x="478" y="140" font-size="11.5" font-weight="600" fill="var(--bad)">corte de validacion</text>
+          <text x="478" y="158" font-size="11.5" fill="currentColor">todo lo de la derecha es</text>
+          <text x="478" y="174" font-size="11.5" fill="currentColor">la COLA de la serie, nunca</text>
+          <text x="478" y="190" font-size="11.5" fill="currentColor">un pedazo del medio</text>
+
+          <line x1="16" y1="228" x2="452" y2="228" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arSq1)"></line>
+          <text x="16" y="248" font-size="11" fill="currentColor" opacity="0.7">tiempo</text>
+        </svg>
+        <figcaption>
+          <b>La validación es siempre la cola, nunca un pedazo del medio.</b> Si partieras
+          la serie al azar, algunas ventanas de entrenamiento vendrían de <em>después</em>
+          del corte de validación: el futuro filtrándose al pasado. El resultado te daría
+          precioso y no significaría nada. La app lo parte cronológicamente por vos.
+        </figcaption>
+      </figure>
+
+      <h3 id="seq-persistencia">El piso: persistencia</h3>
+      <p>
+        Igual que el autoencoder tiene su <a href="#ae-piso">piso de rendirse</a>, acá
+        hay uno, y es todavía más brutal. Para predecir el próximo valor, la respuesta
+        más tonta posible es: <strong>el próximo valor es igual al último que vi</strong>.
+        Cero entrenamiento, cero parámetros. Eso es <strong>persistencia</strong>.
+      </p>
+      <div class="note">
+        <span class="note-label">Por qué importa tanto</span>
+        <p>
+          Porque un gráfico de pronóstico miente como nadie. Una curva que simplemente
+          <em>repite el valor anterior</em> sigue a la verdad casi perfecto a simple
+          vista: va un pasito atrasada y ya. Por eso la app dibuja
+          <strong>siempre</strong> la línea de persistencia junto a la del modelo. Si las
+          dos se superponen, tu red no aprendió nada, por más linda que se vea.
+        </p>
+      </div>
+      <p>
+        En tareas de clasificar, el piso es la <strong>clase mayoritaria</strong>:
+        contestar siempre lo más común. Las dos aparecen en el tablero con su número, y
+        la columna <span class="ui">vs giving up</span> te dice de una cuánto le sacaste.
+      </p>
+
+      <h3 id="seq-memoria">Las cinco arquitecturas</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Capa</th><th>Cómo lee la ventana</th><th>Pesos medidos</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">LSTM</span></td><td>Tres compuertas deciden qué guardar, qué olvidar y qué sacar. Lleva un estado de un paso al siguiente.</td><td>4.385</td></tr>
+            <tr><td><span class="ui">GRU</span></td><td>La misma idea con dos compuertas en vez de tres. Casi siempre igual de buena y más barata.</td><td>3.393</td></tr>
+            <tr><td><span class="ui">Simple RNN</span></td><td>Un estado, sin compuertas. El gradiente se apaga en secuencias largas.</td><td>—</td></tr>
+            <tr><td><span class="ui">Conv1D</span></td><td>Desliza un solo filtro chico por toda la ventana. Ve formas locales y reusa lo aprendido en cada paso.</td><td>225</td></tr>
+            <tr><td><span class="ui">Dense</span></td><td>Aplana la ventana. Un peso por cada paso, ninguno compartido.</td><td>833</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Medido con ventana de 24 pasos y 32 unidades. En el diagrama de la derecha, las
+        tres primeras dibujan <strong>un lazo que vuelve sobre sí mismo</strong>: eso es
+        el estado pasando de un paso al siguiente. Conv1D y Dense no lo tienen.
+      </p>
+
+      <div class="note">
+        <span class="note-label">Cuidado con una trampa</span>
+        <p>
+          «Dense no tiene memoria» no significa «Dense no ve el orden». Con una ventana
+          de largo fijo, Dense recibe <em>un input por cada paso</em>, así que puede
+          perfectamente aprender «el valor del paso 3 es mayor que el del paso 17». En
+          nuestras mediciones sacó <strong>0,99 de accuracy</strong> en la tarea de orden
+          haciendo exactamente eso. Lo que Dense no puede hacer es reusar en el paso 4 lo
+          que aprendió en el paso 3, ni sobrevivir a que cambies el largo de la ventana.
+          Ese es el canje real.
+        </p>
+      </div>
+
+      <h3 id="seq-sonda">La sonda de barajado</h3>
+      <p>
+        Acá está el botón que hace que este workspace valga la pena:
+        <span class="ui">Does order matter? (shuffle probe)</span>. Entrena el mismo
+        modelo <strong>dos veces</strong>. La segunda vez, a cada secuencia le permuta
+        los pasos — cada una con su propia permutación, para que no haya un reordenamiento
+        consistente que se pueda aprender.
+      </p>
+      <p>
+        Los valores son los mismos. Las cantidades son las mismas. Lo único destruido es
+        <em>el arreglo</em>. Así que la diferencia entre las dos corridas es, exactamente,
+        la parte de la respuesta que vivía en el orden.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 300" role="img" aria-label="Arriba, una secuencia con una flecha hacia arriba en la posicion cuatro y una hacia abajo en la diecisiete: el modelo acierta el cien por ciento. Abajo, exactamente los mismos dos simbolos pero en posiciones barajadas: el modelo cae al cincuenta y uno por ciento, que es el azar. La misma prueba en la tarea de contar da noventa y nueve por ciento en los dos casos">
+          <defs>
+            <marker id="arSq2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <text x="0" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--good)">ORDEN REAL</text>
+
+          <line x1="16" y1="58" x2="420" y2="58" stroke="currentColor" stroke-width="1" opacity="0.3"></line>
+          <g stroke="currentColor" stroke-width="1" opacity="0.35">
+            <line x1="40" y1="52" x2="40" y2="64"></line>
+            <line x1="64" y1="52" x2="64" y2="64"></line>
+            <line x1="112" y1="52" x2="112" y2="64"></line>
+            <line x1="136" y1="52" x2="136" y2="64"></line>
+            <line x1="160" y1="52" x2="160" y2="64"></line>
+            <line x1="184" y1="52" x2="184" y2="64"></line>
+            <line x1="208" y1="52" x2="208" y2="64"></line>
+            <line x1="232" y1="52" x2="232" y2="64"></line>
+            <line x1="256" y1="52" x2="256" y2="64"></line>
+            <line x1="304" y1="52" x2="304" y2="64"></line>
+            <line x1="328" y1="52" x2="328" y2="64"></line>
+            <line x1="352" y1="52" x2="352" y2="64"></line>
+          </g>
+          <line x1="88" y1="66" x2="88" y2="30" stroke="var(--good)" stroke-width="2.4" marker-end="url(#arSq2)"></line>
+          <text x="88" y="24" font-size="10.5" text-anchor="middle" fill="var(--good)">sube</text>
+          <line x1="280" y1="50" x2="280" y2="86" stroke="var(--bad)" stroke-width="2.4" marker-end="url(#arSq2)"></line>
+          <text x="280" y="100" font-size="10.5" text-anchor="middle" fill="var(--bad)">baja</text>
+
+          <text x="446" y="50" font-size="13" font-weight="600" fill="var(--good)">100% acierto</text>
+          <text x="446" y="70" font-size="11.5" fill="currentColor">«subio primero» es</text>
+          <text x="446" y="86" font-size="11.5" fill="currentColor">una pregunta con respuesta</text>
+
+          <line x1="0" y1="124" x2="720" y2="124" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+
+          <text x="0" y="148" font-family="monospace" font-size="12" font-weight="600" fill="var(--bad)">PASOS BARAJADOS &#8212; los MISMOS dos simbolos</text>
+
+          <line x1="16" y1="192" x2="420" y2="192" stroke="currentColor" stroke-width="1" opacity="0.3"></line>
+          <g stroke="currentColor" stroke-width="1" opacity="0.35">
+            <line x1="40" y1="186" x2="40" y2="198"></line>
+            <line x1="64" y1="186" x2="64" y2="198"></line>
+            <line x1="88" y1="186" x2="88" y2="198"></line>
+            <line x1="112" y1="186" x2="112" y2="198"></line>
+            <line x1="160" y1="186" x2="160" y2="198"></line>
+            <line x1="184" y1="186" x2="184" y2="198"></line>
+            <line x1="232" y1="186" x2="232" y2="198"></line>
+            <line x1="256" y1="186" x2="256" y2="198"></line>
+            <line x1="280" y1="186" x2="280" y2="198"></line>
+            <line x1="304" y1="186" x2="304" y2="198"></line>
+            <line x1="352" y1="186" x2="352" y2="198"></line>
+          </g>
+          <line x1="136" y1="200" x2="136" y2="164" stroke="var(--bad)" stroke-width="2.4" marker-end="url(#arSq2)"></line>
+          <text x="136" y="158" font-size="10.5" text-anchor="middle" fill="var(--bad)">baja</text>
+          <line x1="208" y1="184" x2="208" y2="220" stroke="var(--good)" stroke-width="2.4" marker-end="url(#arSq2)"></line>
+          <text x="208" y="234" font-size="10.5" text-anchor="middle" fill="var(--good)">sube</text>
+
+          <text x="446" y="184" font-size="13" font-weight="600" fill="var(--bad)">51% acierto</text>
+          <text x="446" y="204" font-size="11.5" fill="currentColor">o sea, puro azar</text>
+
+          <line x1="16" y1="266" x2="700" y2="266" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+          <text x="16" y="288" font-size="11.5" fill="currentColor">La MISMA sonda en la tarea de contar: 100% con orden real, 99% barajado. Ahi el orden no aportaba nada.</text>
+        </svg>
+        <figcaption>
+          <b>Un botón, dos respuestas opuestas.</b> En la tarea de orden, destruirlo tira
+          al modelo del 100% al 51% — es decir, al azar. En la tarea de contar, el mismo
+          modelo con los pasos barajados saca 99%: todo lo que había aprendido lo podía
+          aprender de un montón desordenado de números. Ahí un LSTM es gasto sin retorno.
+        </figcaption>
+      </figure>
+
+      <h3 id="seq-tareas">Las cuatro tareas</h3>
+      <p>
+        Dos de las cuatro están puestas para que <strong>pierdas</strong>. A propósito.
+        Un alumno que solo vio secuencias donde la memoria gana no aprendió cuándo usarla:
+        aprendió un reflejo.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tarea</th><th>Qué es</th><th>Qué pasa de verdad</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="ui">Sine wave</span></td>
+              <td>Una onda con ruido. Predecir el próximo valor.</td>
+              <td><strong>El caso honesto.</strong> Persistencia da 0,139; el LSTM da 0,0034. Le gana 41 veces. Y barajado se va a 0,53: el orden era casi todo.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">Random walk</span></td>
+              <td>Cada paso es el anterior más ruido nuevo.</td>
+              <td><strong>Imposible de ganar.</strong> Persistencia da 0,0024 y nada la baja: LSTM 0,0049, GRU 0,0032, Dense 0,0121. No es falta de épocas — es la definición de paseo aleatorio.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">Which spike came first?</span></td>
+              <td>Dos picos, uno arriba y uno abajo. ¿Cuál vino primero?</td>
+              <td><strong>El orden es todo.</strong> LSTM y GRU sacan 100%. Barajado: 51%.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">More ups than downs?</span></td>
+              <td>¿La suma da positivo?</td>
+              <td><strong>El orden no importa.</strong> 100% con orden real, 99% barajado. Un Dense de 866 pesos empata con un LSTM de 4.418.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <span class="note-label">El paseo aleatorio es el más valioso</span>
+        <p>
+          Porque es el que te pasa en la vida real y no te das cuenta. Si entrenás un
+          modelo sobre precios y el gráfico te queda hermoso, mirá la línea de
+          persistencia antes de festejar. Y si alguna vez <em>le ganás</em> a la
+          persistencia en un paseo aleatorio, no descubriste nada: encontraste ruido en
+          la validación. Cambiá la semilla y mirá cómo se evapora.
+        </p>
+      </div>
+
+      <h3 id="seq-etapas">Las cuatro etapas</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Etapa</th><th>Qué hacés ahí</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">1. Data</span></td><td>Elegís una de las cuatro tareas y el largo de la ventana. Abajo del combo aparece qué esperar de esa tarea — incluso que vas a perder. <span class="ui">Shuffle the timesteps</span> te deja generar los datos ya barajados.</td></tr>
+            <tr><td><span class="ui">2. Architecture</span></td><td>La capa, las unidades, las capas apiladas, bidireccional, dropout. <span class="ui">Score to beat</span> te muestra el piso antes de entrenar. <span class="ui">Bidirectional</span> se apaga solo para Conv1D y Dense: no tienen dirección que dar vuelta.</td></tr>
+            <tr><td><span class="ui">3. Training</span></td><td>Tres botones. <span class="ui">Train</span> entrena uno. <span class="ui">Compare architectures</span> corre LSTM, GRU, Conv1D y Dense desde los mismos pesos iniciales. <span class="ui">Does order matter?</span> es la sonda.</td></tr>
+            <tr><td><span class="ui">4. Inspect</span></td><td>En pronóstico, <span class="ui">Forecast vs persistence</span> dibuja las dos líneas juntas. En clasificación, la matriz de confusión. Y <span class="ui">Show a few raw windows</span> para mirar los datos antes de meterlos, que debería ser siempre lo primero.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Bidireccional: leé la letra chica</span>
+        <p>
+          Leer la secuencia también al revés suele mejorar el resultado, y por eso es
+          tentador dejarlo prendido siempre. Pero solo tiene sentido si podés ver la
+          secuencia <strong>entera</strong> antes de contestar. En un pronóstico en vivo
+          no podés: el futuro todavía no pasó. Si lo prendés para pronosticar, estás
+          mirando datos que en producción no vas a tener.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 9 -->
     <section id="experimentos">
-      <h2><span class="chapter">08</span>Doce experimentos</h2>
+      <h2><span class="chapter">09</span>Quince experimentos</h2>
       <p class="section-lede">
         Acá está lo que más te va a enseñar. Cada uno rompe algo a propósito, porque ver
         fallar una red enseña más que verla funcionar.
@@ -2338,11 +2665,44 @@ pip install -r requirements.txt</pre>
           <dt class="lesson">Aprendiste</dt><dd class="lesson">Volvé a entrenar sin cambiar nada y juzgá los mismos archivos. Medido: las rayas dan 100% <strong>siempre</strong>, pero el círculo se movió entre 28% y 78% según la semilla. <strong>Un detector de anomalías sirve cuando está seguro</strong>; si el percentil está en el medio, lo está decidiendo el azar y no tu imagen.</dd>
         </dl>
       </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">13</span><h3>Intentá ganarle al paseo aleatorio</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Sequences · tarea <span class="ui">Random walk</span></dd>
+          <dt>Hacé</dt><dd>Generá los datos. Mirá <span class="ui">Score to beat</span>. Entrená un LSTM 20 épocas. Después probá con 64 unidades, 3 capas, 60 épocas.</dd>
+          <dt>Vas a ver</dt><dd>Perdés siempre. Medido: persistencia 0,0024 contra LSTM 0,0049. Más red y más épocas no mueven la aguja.</dd>
+          <dt>Por qué</dt><dd>En un paseo aleatorio el próximo valor <em>es</em> el último más ruido nuevo. No hay función del pasado que pueda hacerlo mejor. No es tu modelo: es el problema.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">A mirar el piso <strong>antes</strong> de festejar un gráfico lindo. Andá a <span class="ui">Forecast vs persistence</span> y mirá las dos líneas casi superpuestas.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">14</span><h3>La sonda que cambia de respuesta</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Sequences · <span class="ui">Which spike came first?</span> y después <span class="ui">More ups than downs?</span></dd>
+          <dt>Hacé</dt><dd>Con la primera tarea apretá <span class="ui">Does order matter?</span>. Anotá los dos números. Cambiá a la segunda tarea, generá de nuevo y apretá el <strong>mismo botón</strong>.</dd>
+          <dt>Vas a ver</dt><dd>Tarea de orden: 100% contra 51%. Tarea de contar: 100% contra 99%.</dd>
+          <dt>Por qué</dt><dd>En la primera, la respuesta vivía enteramente en el arreglo. En la segunda, en la suma — y una suma no sabe de orden.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">El mismo experimento, dos veredictos opuestos. Esta es la única medición de todo el capítulo que te dice si hacía falta un LSTM.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">15</span><h3>El Dense que empata con el LSTM</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Sequences · <span class="ui">More ups than downs?</span></dd>
+          <dt>Hacé</dt><dd>Apretá <span class="ui">Compare architectures</span> con 20 épocas. Mirá el accuracy <em>y</em> la cuenta de pesos de cada brazo.</dd>
+          <dt>Vas a ver</dt><dd>LSTM 100% con 4.418 pesos. Dense 99% con 866. Conv1D se queda en 88%.</dd>
+          <dt>Por qué</dt><dd>La tarea es una suma, y para sumar 24 números con una ventana fija alcanza con un peso por posición. La memoria no tenía nada que aportar.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Que la red densa común es una línea de base mucho más fuerte de lo que casi nadie prueba. Corré la sonda del experimento 14 en esta misma tarea y vas a entender por qué.</dd>
+        </dl>
+      </div>
     </section>
 
-    <!-- ============================================================ 8 -->
+    <!-- ============================================================ 10 -->
     <section id="glosario">
-      <h2><span class="chapter">09</span>Glosario</h2>
+      <h2><span class="chapter">10</span>Glosario</h2>
       <p class="section-lede">Las palabras que más vas a leer, en una línea cada una.</p>
 
       <dl class="glossary">

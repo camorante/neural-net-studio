@@ -1,10 +1,11 @@
 # Neural Net Studio
 
 An interactive desktop playground for building, training and inspecting neural
-networks — both **fully connected** ones over tabular data and **convolutional**
-ones over images. Design the architecture with spin boxes and combos, watch the
-diagram redraw as you type, then train on real data and see the learning curves
-move epoch by epoch.
+networks: **fully connected** ones over tabular data, **convolutional** ones over
+images, an **autoencoder** that never sees a label, and **recurrent** ones over
+sequences. Design the architecture with spin boxes and combos, watch the diagram
+redraw as you type, then train on real data and see the learning curves move
+epoch by epoch.
 
 Built with **PyQt6** for the interface and **TensorFlow / Keras** for the models.
 No code to write: you move numbers and watch what changes.
@@ -18,7 +19,7 @@ called out where they appear.
 
 | You want to… | Go to |
 |---|---|
-| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 9 chapters, 14 hand-drawn figures |
+| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 10 chapters, 16 hand-drawn figures |
 | Install and run it | [Install](#install) below |
 | Understand the code before changing it | [`AGENTS.md`](AGENTS.md) |
 | Just try something and break it | [Experiments](#experiments-worth-running) |
@@ -81,27 +82,28 @@ before epoch 1 - that is TensorFlow loading. The import is deferred into the
 training thread on purpose, so startup never blocks on it. The log says
 `Loading TensorFlow...` while it happens.
 
-## Three workspaces
+## Four workspaces
 
 The window opens on a mode selector, not a step list:
 
 ```
-[ Dense network (NN) ]   [ Convolutional (CNN) ]   [ Autoencoder (no labels) ]
-        |                          |                          |
-   1. Data                    1. Images                  1. Images
-   2. Architecture            2. Architecture            2. Architecture
-   3. Training                3. Training                3. Training
-   4. Predict                 4. Predict                 4. Reconstruct
+[ Dense (NN) ]   [ Convolutional (CNN) ]   [ Autoencoder ]   [ Sequences (RNN) ]
+      |                    |                      |                   |
+ 1. Data              1. Images              1. Images            1. Data
+ 2. Architecture      2. Architecture        2. Architecture      2. Architecture
+ 3. Training          3. Training            3. Training          3. Training
+ 4. Predict           4. Predict             4. Reconstruct       4. Inspect
 ```
 
-A convolutional network is not a later stage of a dense one, and an
-autoencoder is not a later stage of either - it is the only one here that
-never sees a label. Each is a different path, with different data, a different
-architecture vocabulary and different failure modes. So each gets its own four
-stages, its own model, its own workers and its own diagrams. Training one
-leaves the others untouched.
+A convolutional network is not a later stage of a dense one; an autoencoder is
+not a later stage of either - it is the only one here that never sees a label;
+and the sequence workspace exists for a question none of the others ask, which
+is whether the order of the data carries anything. Each is a different path,
+with different data, a different architecture vocabulary and different failure
+modes. So each gets its own four stages, its own model, its own workers and its
+own diagrams. Training one leaves the others untouched.
 
-The three share the theme, the plotting widgets, and - between the two image
+The four share the theme, the plotting widgets, and - between the two image
 workspaces - the image-source panel, which knows about `core/vision.py` and
 nothing about any particular kind of network.
 
@@ -433,6 +435,42 @@ Also worth knowing, and it follows the same logic: the narrower the waist, the
 longer it takes to become useful at all. Latent 64 beats the give-up floor at
 epoch 9, latent 8 at epoch 13, latent 2 not until epoch 19.
 
+## The sequence workspace
+
+Four synthetic tasks and five architectures, built around one question that is
+usually skipped: **does the order of this data carry anything at all?**
+
+| Task | What it is | What actually happens |
+|---|---|---|
+| Sine wave | A noisy wave; predict the next value | The honest case. Persistence scores 0.139, an LSTM 0.0034 |
+| Random walk | Each step is the last plus fresh noise | **Unwinnable.** Persistence 0.0024 is provably optimal; every architecture loses |
+| Which spike came first? | Two spikes; which came first | Order is the whole signal. LSTM 1.000, and 0.513 once shuffled |
+| More ups than downs? | Is the sum positive? | Order is irrelevant. 1.000 real, 0.990 shuffled |
+
+Two of the four are there to be lost, deliberately. A student who has only ever
+seen recurrence win has not learned when to use it — they have learned a reflex.
+
+### The order probe
+
+`Does order matter? (shuffle probe)` trains the same model twice: once on the
+real data, once with every sequence's timesteps permuted independently. The
+values and their counts survive; only the arrangement is destroyed. The gap
+between the two runs *is* the part of the answer that lived in the order, and it
+is the only measurement here that can tell you a recurrent layer was pointless.
+
+The same button gives opposite verdicts on the last two tasks above. That is the
+point of the workspace.
+
+### Floors
+
+Forecasting is floored by persistence, classification by the majority class, and
+the two disagree about which direction is good — so every readout reads
+`better_is_lower` rather than assuming. The forecast chart always draws
+persistence beside the model, because a prediction plotted alone against the
+truth flatters itself: a curve that merely repeats the previous value tracks the
+target almost perfectly by eye.
+
+
 ## Troubleshooting
 
 **The first Train click hangs for several seconds.**
@@ -488,7 +526,7 @@ main.py                        entry point, quiets TensorFlow before any import
 manual.html                    illustrated manual for students (Spanish)
 AGENTS.md                      brief for AI agents working on this code
 requirements.txt               pinned minimums
-tests/                         six runnable suites - see tests/README.md
+tests/                         eight runnable suites - see tests/README.md
 nnstudio/
   core/                        no Qt in here - pure domain logic
     dataset.py                 loading, task inference, encoding, splitting
@@ -499,6 +537,8 @@ nnstudio/
     resnet.py                  hand-built residual blocks + transfer learning
     vision_trainer.py          convolutional runs and the skip-connection ablation
     autoencoder.py             encoder/decoder pair, anomaly split, error scoring
+    sequences.py               sequence tasks, recurrent models, the give-up floors
+    sequence_trainer.py        one run, the architecture sweep, the order probe
     autoencoder_trainer.py     unsupervised runs, the latent sweep, the readouts
   ui/
     main_window.py             thin shell: the three workspace tabs
@@ -540,7 +580,7 @@ plain run object in a `QThread` and turns its callbacks into signals.
 That is why training never freezes the window, and why the interesting logic can
 be checked without opening one.
 
-The three workspaces are independent on purpose. They share the theme, the
+The four workspaces are independent on purpose. They share the theme, the
 plotting widgets, and - between the two image workspaces - the image-source
 panel, and nothing else: no shared dataset, no shared model, no shared worker.
 Training in one leaves the others untouched.
