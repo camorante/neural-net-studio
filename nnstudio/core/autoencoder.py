@@ -21,7 +21,6 @@ lives - callers never do it themselves.
 """
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 
 import numpy as np
@@ -545,6 +544,17 @@ def format_anomalies(scores: dict) -> str:
         f"{auc * 100:.0f}% of the time.",
     ]
 
+    lines.append("")
+    lines.append(
+        "  Before you trust this number: it moves with the random "
+        "initialisation, not just with your settings. Measured on the "
+        "synthetic shapes at latent 8, six seeds gave AUC 0.604, 0.650, 0.714, "
+        "0.726, 0.776 and 0.836 - a spread of 0.23 with nothing else changed. "
+        "One run is an anecdote. Train it again before believing the third "
+        "decimal, or any of them."
+    )
+    lines.append("")
+
     if auc >= 0.9:
         lines.append(
             "  That is a usable detector built without a single label of the "
@@ -567,7 +577,107 @@ def format_anomalies(scores: dict) -> str:
     return "\n".join(lines)
 
 
-def nearest_power_of_two(value: int) -> int:
-    """Snap a latent size to a power of two - handy for the sweep presets."""
-    value = max(1, int(value))
-    return int(2 ** round(math.log2(value)))
+# --------------------------------------------------------- judging one image
+
+def judge_image(model, image: np.ndarray, reference: np.ndarray) -> dict:
+    """Score one new image against how well the model rebuilds what it knows.
+
+    `reference` is the familiar set: the validation images from the classes the
+    model actually trained on. The verdict is a PERCENTILE rather than a
+    threshold, because "its error is higher than 97% of what I know" is a
+    statement this measurement supports, while "this is an anomaly" is a
+    decision that needs a cutoff somebody chose - and choosing it is not the
+    model's job.
+    """
+    reference = np.asarray(reference, dtype="float32")
+    if len(reference) < 8:
+        raise AutoencoderError(
+            "Not enough familiar images to compare against - at least 8 are needed"
+        )
+
+    familiar = reconstruction_errors(model, reference)
+    error = float(reconstruction_errors(model, image)[0])
+    spread = float(np.std(familiar))
+    mean = float(np.mean(familiar))
+    return {
+        "error": error,
+        "percentile": float((familiar < error).mean() * 100.0),
+        "reference_mean": mean,
+        "reference_std": spread,
+        "reference_max": float(np.max(familiar)),
+        "reference_n": int(len(familiar)),
+        "sigmas": float((error - mean) / spread) if spread > 0 else 0.0,
+    }
+
+
+def format_judgement(verdict: dict, latent: np.ndarray | None = None) -> str:
+    """Say what the number supports, and not one word more."""
+    if not verdict:
+        return "Nothing to judge."
+
+    percentile = verdict["percentile"]
+    lines = [
+        f"Reconstruction error: {verdict['error']:.5f}",
+        f"  The {verdict['reference_n']} images this model knows average "
+        f"{verdict['reference_mean']:.5f} (worst of them: "
+        f"{verdict['reference_max']:.5f}).",
+        f"  Yours is higher than {percentile:.0f}% of them, "
+        f"{verdict['sigmas']:+.1f} standard deviations from their mean.",
+        "",
+    ]
+
+    if percentile >= 99:
+        lines.append(
+            "  VERY UNFAMILIAR. The model rebuilt this worse than almost "
+            "everything it was trained on."
+        )
+    elif percentile >= 95:
+        lines.append(
+            "  UNFAMILIAR. Above the bulk of what the model knows - the kind of "
+            "image most anomaly detectors would flag."
+        )
+    elif percentile >= 80:
+        lines.append(
+            "  SLIGHTLY UNUSUAL. Inside the range the model knows, but at the "
+            "hard end of it. On its own this is not a finding."
+        )
+    else:
+        lines.append(
+            "  FAMILIAR. The model rebuilt this about as well as its own "
+            "training data, so it has seen this kind of thing before."
+        )
+
+    lines.append("")
+    lines.append(
+        "  Two honest caveats. Unfamiliar is not the same as defective - the "
+        "model only reports that something does not look like what it was "
+        "shown. And your image was resized to the dataset's size, which for "
+        "32x32 throws away almost everything a photograph contained, so a "
+        "photo will read as unfamiliar for that reason alone."
+    )
+    # Measured on the synthetic shapes at latent 8, same dataset, four seeds:
+    # a clean hand-drawn triangle scored 63, 78, 82 and 91; a circle scored
+    # 28, 29, 49 and 78; a stripe pattern scored 100 every time. So a middling
+    # percentile is the seed talking, and an emphatic one is the image.
+    lines.append("")
+    if 20 <= percentile <= 90:
+        lines.append(
+            "  TRUST THIS ONE LOOSELY. A percentile in the middle moves a lot "
+            "with the random initialisation, not with your image: retrained on "
+            "four different seeds, the same hand-drawn circle scored anywhere "
+            "from 28% to 78%. Train again and see whether the answer holds."
+        )
+    else:
+        lines.append(
+            "  This verdict is at the emphatic end, which is where it is worth "
+            "something. Retrained on four seeds, genuinely alien images stayed "
+            "at 100% every single time, while borderline ones swung by 50 "
+            "points. An anomaly detector is trustworthy when it is sure."
+        )
+
+    if latent is not None and len(np.ravel(latent)) <= 24:
+        values = " ".join(f"{v:+.2f}" for v in np.ravel(latent))
+        lines.append("")
+        lines.append("  Its latent code, the whole image squeezed down:")
+        lines.append(f"    {values}")
+    return "\n".join(lines)

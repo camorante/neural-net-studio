@@ -444,6 +444,44 @@ def load_folder(
     )
 
 
+# ------------------------------------------------------------- single image
+
+def load_single_image(path: str | Path, image_size: int,
+                      channels: int = 3) -> np.ndarray:
+    """One image from disk, reshaped to match a dataset. Returns (1, H, W, C).
+
+    This is the inference counterpart to `load_folder`: no labels, no split,
+    one picture. It lives here rather than in a workspace because asking a
+    trained model about a file you just picked is not specific to any kind of
+    network - the convolutional tab has the same gap.
+    """
+    from PIL import Image  # noqa: PLC0415
+
+    target = Path(path)
+    if not target.is_file():
+        raise VisionError(f"{target} is not a file")
+    if target.suffix.lower() not in IMAGE_SUFFIXES:
+        raise VisionError(
+            f"{target.suffix or 'that file'} is not a readable image. "
+            f"Use one of: {', '.join(IMAGE_SUFFIXES)}"
+        )
+
+    try:
+        with Image.open(target) as handle:
+            frame = handle.convert("RGB" if channels == 3 else "L").resize(
+                (int(image_size), int(image_size)), Image.LANCZOS
+            )
+            array = np.asarray(frame, dtype="float32")
+    except VisionError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - surfaced to the user
+        raise VisionError(f"Could not read {target.name}: {exc}") from exc
+
+    if array.ndim == 2:
+        array = array[..., None]
+    return array[None, ...]
+
+
 # --------------------------------------------------------------------- helpers
 
 def _resize(images: np.ndarray, size: int) -> np.ndarray:

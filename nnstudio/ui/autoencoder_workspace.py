@@ -7,6 +7,8 @@ nothing about any particular kind of network.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -134,6 +136,7 @@ class AutoencoderWorkspace(QWidget):
         self.reconstruct_panel.reconstruct_requested.connect(self._show_reconstructions)
         self.reconstruct_panel.hardest_requested.connect(self._show_hardest)
         self.reconstruct_panel.anomaly_requested.connect(self._score_anomalies)
+        self.reconstruct_panel.judge_requested.connect(self._judge_image)
 
     # ----------------------------------------------------------------- dataset
 
@@ -642,6 +645,67 @@ class AutoencoderWorkspace(QWidget):
         self.reconstruct_panel.show_result(
             f"The {size} least familiar images", detail
         )
+
+    def _judge_image(self, path: str) -> None:
+        """Score a file the model has never seen, against everything it knows."""
+        if self._model is None or self._x_val_used is None or self._bundle is None:
+            self.reconstruct_panel.show_result("Train an autoencoder first.")
+            return
+
+        height, _ = self._bundle.image_size
+        reference = self._x_val_used
+        if len(reference) > MAX_RANKED:
+            reference = reference[self._pick(MAX_RANKED, reference)]
+
+        try:
+            image = vz.load_single_image(path, height, self._bundle.channels)
+            verdict = ae.judge_image(self._model, image, reference)
+            rebuilt = ae.reconstruct(self._model, image)
+            latent = ae.latent_codes(self._encoder, image)
+        except (vz.VisionError, ae.AutoencoderError) as exc:
+            self.reconstruct_panel.show_result("Could not judge that file", str(exc))
+            self.status.emit("Could not judge that file")
+            return
+        except Exception as exc:  # noqa: BLE001 - surfaced to the user
+            self.reconstruct_panel.show_result("Could not judge that file", str(exc))
+            return
+
+        name = Path(path).name
+        self.grid.show_rows(
+            [
+                {"label": name[:14], "images": image, "colour": theme.WARNING},
+                {
+                    "label": "rebuilt",
+                    "images": rebuilt,
+                    "errors": [verdict["error"]],
+                    "colour": theme.ACCENT,
+                },
+            ],
+            f"Your file, resized to {height}x{height}, and what the model made of it. "
+            f"Its error beats {verdict['percentile']:.0f}% of the "
+            f"{verdict['reference_n']} images this model knows.",
+        )
+        self.grid_card.set_title(f"Judging {name}")
+
+        self.training_panel.append_log(
+            f"\n--- {name} ---\n" + ae.format_judgement(verdict, latent)
+        )
+        percentile = verdict["percentile"]
+        headline = (
+            f"Unfamiliar: above {percentile:.0f}% of what the model knows"
+            if percentile >= 95
+            else f"Familiar: above only {percentile:.0f}% of what the model knows"
+            if percentile < 80
+            else f"Borderline: above {percentile:.0f}% of what the model knows"
+        )
+        self.reconstruct_panel.show_result(
+            headline,
+            f"Error {verdict['error']:.5f} against a familiar average of "
+            f"{verdict['reference_mean']:.5f} "
+            f"({verdict['sigmas']:+.1f} standard deviations). The full readout, "
+            f"including this image's latent code, is in the Training log.",
+        )
+        self.status.emit(f"{name}: percentile {percentile:.0f}")
 
     def _score_anomalies(self) -> None:
         if self._model is None or self._split is None:

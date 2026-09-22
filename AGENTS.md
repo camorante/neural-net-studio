@@ -290,6 +290,22 @@ timeout as a safety net.
 
 Render a frame with `QPixmap(win.size()); win.render(pix); pix.save(path)`.
 
+### A shell caveat that has cost time three times
+
+Never write `
+` inside a Python patch script fed through a bash heredoc. The
+escape collapses to a REAL newline and silently breaks the string literal it
+was inside, producing `SyntaxError: unterminated f-string literal` several
+edits later. Build the backslash instead:
+
+```python
+NL = chr(92) + "n"
+new = '    return "' + NL + '".join(lines)'
+```
+
+Better still, use the Write or Edit tools for anything containing escapes.
+This has bitten three separate edits in this repository.
+
 ### Two measurement caveats
 
 - **Offscreen has no Segoe UI.** It falls back to a font with much wider
@@ -340,8 +356,10 @@ defaults or the model code, re-measure before editing the claims.
 | Colour recovery, latent 64 | red-minus-blue correlation +0.03 at 25 epochs, **+0.91 at 90** |
 | Colour recovery, latent 8 | +0.06 even at 90 epochs — that waist never affords colour |
 | When each waist beats the give-up floor | latent 64 at epoch **9**, latent 8 at **13**, latent 2 at **19** |
-| Anomaly detection, hold out `triangle`, 25 epochs, latent 8 | familiar 0.0286, held-out 0.0378 (1.32x worse), **ROC AUC 0.836** |
-| The same, latent 64 | familiar 0.0159, held-out 0.0168 (1.06x worse), **ROC AUC 0.611** |
+| Anomaly detection, hold out `triangle`, 25 epochs, latent 8 | **ROC AUC 0.718 +/- 0.076** over 6 seeds (0.604 … 0.836) |
+| The same, latent 64 | **ROC AUC 0.453 +/- 0.104** over 6 seeds (0.336 … 0.611) — below a coin flip on 4 of 6 |
+| Latent 8 beats latent 64 as a detector | **6 of 6 seeds**, mean AUC gap +0.265 +/- 0.099 |
+| Representative single run (seed 7, the median) | latent 8: familiar 0.01864, held-out 0.02254, 1.21x, AUC 0.726 |
 
 The 50-layer row is the important one, and the diagnostic is **training**
 accuracy: a deep plain stack that cannot fit its own training data is failing
@@ -357,14 +375,26 @@ while at latent 8 it never arrives at all. `COLOUR_NOTE` in
 bottleneck loses colour" — that would be wrong in one of the two cases, and it
 is the case a curious student is most likely to test.
 
-The two anomaly rows carry the workspace's most counter-intuitive result, and
-it is deliberate: **the autoencoder that reconstructs better is the worse
-detector.** Latent 64 halves the reconstruction error of latent 8 and its ROC
-AUC collapses from 0.836 to 0.611, because a wide waist generalises well
-enough to rebuild the class it never saw. Anomaly detection does not want the
-best reconstructor, it wants one tight enough that only the familiar comes out
-right. `format_anomalies()` already points a weak separation at the latent
-size; do not "improve" it by suggesting a wider waist.
+The anomaly rows carry the workspace's most counter-intuitive result, and it
+survives a seed sweep: **the autoencoder that reconstructs better is the worse
+detector.** Latent 8 reconstructs 1.28x *worse* than latent 64 and detects
++0.265 of AUC better, and it wins on **6 of 6 seeds** — a gap 2.7x its own
+spread. A wide waist generalises well enough to rebuild the class it never
+saw; on 4 of those 6 seeds latent 64 landed *below* 0.5, meaning the unseen
+triangles rebuilt BETTER than the familiar classes and the error ranked them
+backwards. Anomaly detection does not want the best reconstructor, it wants
+one tight enough that only the familiar comes out right.
+`format_anomalies()` already points a weak separation at the latent size; do
+not "improve" it by suggesting a wider waist.
+
+**How this section nearly shipped a flattered number.** The first version of
+these rows recorded AUC 0.836 for latent 8 and 0.611 for latent 64, each from
+a single seeded run. Both were the *best of six*. The conclusion held, but the
+headline figures did not, and the app's own manual has an experiment about
+exactly this failure ("cambiá el seed y perdé la fe"). Any AUC, accuracy or
+gap that reaches these docs from one run is provisional until a seed sweep
+agrees with it. `format_anomalies()` now prints the spread so a student
+reading one run sees it too.
 
 ---
 

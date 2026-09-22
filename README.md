@@ -372,6 +372,14 @@ a student for a result that is indistinguishable from noise.
 | **Show reconstructions** | What does the output look like next to the input? |
 | **Show the hardest to rebuild** | Which images did this model find least familiar? |
 | **Score the held-out class** | Does the class it never saw rebuild worse - and by how much? |
+| **Judge my own image** | Pick any file on disk: how does its error compare with everything the model knows? |
+
+`Judge my own image` is the only place the app is asked about something that
+was never in a dataset, which is what anomaly detection actually means. It
+reports a **percentile** rather than a verdict - "higher than 97% of what I
+know" is a statement the measurement supports, while "this is an anomaly"
+needs a cutoff, and choosing that cutoff is not the model's job. It also
+prints the image's latent code, the whole picture as a handful of numbers.
 
 The rows align column by column on purpose: one picture, one waist per row,
 read top to bottom. The figure under each image is that image's own error.
@@ -397,18 +405,29 @@ evenly; it imposes a priority order, and this is a student watching it choose.
 ### Anomaly detection, and its counter-intuitive result
 
 Hold a class out and the autoencoder becomes a detector for something it has
-no examples of. Measured, same dataset, 25 epochs, `triangle` withheld:
+no examples of. Measured over **six random seeds**, same dataset, 25 epochs,
+`triangle` withheld - because a single run's AUC moves by 0.23 with nothing
+changed but the initialisation:
 
-| Latent | Error on familiar | Error on `triangle` | ROC AUC |
+| Latent | Val MSE | ROC AUC (6 seeds) | Range |
 |---|---|---|---|
-| 8 | 0.0286 | 0.0378 (1.32x worse) | **0.836** |
-| 64 | 0.0159 | 0.0168 (1.06x worse) | 0.611 |
+| 8 | 0.0197 | **0.718 +/- 0.076** | 0.604 … 0.836 |
+| 64 | 0.0154 | 0.453 +/- 0.104 | 0.336 … 0.611 |
 
-**The autoencoder that reconstructs better is the worse detector.** Latent 64
-halves the reconstruction error and its AUC collapses, because a wide waist
-generalises well enough to rebuild the class it never saw. Anomaly detection
-does not want the best reconstructor - it wants one tight enough that only the
-familiar comes out right.
+**The autoencoder that reconstructs better is the worse detector**, and this
+one survives the sweep: latent 8 reconstructs 1.28x *worse* and detects
++0.265 of AUC better, winning on **6 of 6 seeds** — a gap 2.7x its own spread.
+A wide waist generalises well enough to rebuild the class it never saw. On 4
+of those 6 seeds latent 64 landed *below 0.5*, meaning the unseen triangles
+rebuilt better than the familiar classes and the error ranked them backwards.
+
+Anomaly detection does not want the best reconstructor - it wants one tight
+enough that only the familiar comes out right. And note the honest ceiling:
+0.72 is a useful signal, not a reliable detector. The app says so.
+
+> The first version of this table reported 0.836 and 0.611 from one seeded run
+> each. Both were the best of six. The conclusion held; the headline numbers
+> did not. Any figure here that comes from a single run is provisional.
 
 Also worth knowing, and it follows the same logic: the narrower the waist, the
 longer it takes to become useful at all. Latent 64 beats the give-up floor at
