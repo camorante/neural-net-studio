@@ -423,7 +423,7 @@
     <p class="toc-title">Contenido</p>
     <ol>
       <li><a href="#empezar"><span class="num">1</span>Antes de empezar</a></li>
-      <li><a href="#dos-mundos"><span class="num">2</span>Los dos mundos</a></li>
+      <li><a href="#dos-mundos"><span class="num">2</span>Los tres mundos</a></li>
       <li>
         <a href="#conceptos"><span class="num">3</span>Conceptos básicos</a>
         <ol class="sub">
@@ -461,8 +461,19 @@
           <li><a href="#cnn-predict">4. Predict</a></li>
         </ol>
       </li>
-      <li><a href="#experimentos"><span class="num">7</span>Experimentos</a></li>
-      <li><a href="#glosario"><span class="num">8</span>Glosario</a></li>
+      <li>
+        <a href="#autoencoder"><span class="num">7</span>Autoencoder</a>
+        <ul>
+          <li><a href="#ae-sin-etiquetas">Sin etiquetas</a></li>
+          <li><a href="#ae-cuello">El cuello de botella</a></li>
+          <li><a href="#ae-piso">El piso de rendirse</a></li>
+          <li><a href="#ae-etapas">Las cuatro etapas</a></li>
+          <li><a href="#ae-gris">Por qué salen grises</a></li>
+          <li><a href="#ae-anomalias">Detectar anomalías</a></li>
+        </ul>
+      </li>
+      <li><a href="#experimentos"><span class="num">8</span>Experimentos</a></li>
+      <li><a href="#glosario"><span class="num">9</span>Glosario</a></li>
     </ol>
   </nav>
 
@@ -529,15 +540,16 @@ pip install -r requirements.txt</pre>
 
     <!-- ============================================================ 2 -->
     <section id="dos-mundos">
-      <h2><span class="chapter">02</span>Los dos mundos: NN y CNN</h2>
+      <h2><span class="chapter">02</span>Los tres mundos: NN, CNN y Autoencoder</h2>
       <p class="section-lede">
-        Al abrir la app ves dos pestañas grandes arriba. No son dos pasos.
-        Son dos caminos distintos, y elegís uno.
+        Al abrir la app ves tres pestañas grandes arriba. No son tres pasos.
+        Son tres caminos distintos, y elegís uno.
       </p>
 
       <div class="pill-row">
         <span class="pill on">Dense network (NN)</span>
         <span class="pill on">Convolutional (CNN)</span>
+        <span class="pill on">Autoencoder (no labels)</span>
       </div>
 
       <p>
@@ -666,6 +678,23 @@ pip install -r requirements.txt</pre>
             donde «estar al lado» signifique algo.
           </p>
         </div>
+      </div>
+
+      <p>
+        Las dos primeras se diferencian por la <strong>forma de los datos</strong>. La
+        tercera se diferencia por otra cosa completamente distinta: por quién sabe la
+        respuesta.
+      </p>
+
+      <div class="card">
+        <h4>Usá Autoencoder si…</h4>
+        <p>
+          querés ver qué puede aprender una red <strong>sin que nadie le diga nada</strong>.
+          No hay etiquetas, no hay respuestas correctas, no hay accuracy. Le das una
+          imagen y le pedís que te la devuelva a través de una capa demasiado chica para
+          que pase entera. Es el
+          <a href="#autoencoder">capítulo 7</a>, y es el más distinto de los tres.
+        </p>
       </div>
     </section>
 
@@ -1707,9 +1736,422 @@ pip install -r requirements.txt</pre>
       </p>
     </section>
 
+
     <!-- ============================================================ 7 -->
+    <section id="autoencoder">
+      <h2><span class="chapter">07</span>Autoencoder: aprender sin etiquetas</h2>
+      <p class="section-lede">
+        Hasta acá, cada red que entrenaste tenía a alguien que ya sabía la respuesta.
+        Esta no. Es la única de la app que nunca ve una etiqueta.
+      </p>
+
+      <h3 id="ae-sin-etiquetas">La idea: la respuesta es la pregunta</h3>
+      <p>
+        A un autoencoder le das una imagen y le pedís que te devuelva
+        <strong>la misma imagen</strong>. Eso suena inútil, y lo sería, si no fuera por
+        una trampa: en el medio le pusiste una capa demasiado chica para que la imagen
+        pase entera. Tiene que elegir qué guardar.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 340" role="img" aria-label="Arriba, aprendizaje supervisado: una imagen y una etiqueta escrita por una persona entran al modelo, que se corrige contra la etiqueta. Abajo, un autoencoder: entra solo la imagen, pasa por un encoder, una capa latente de dieciseis numeros y un decoder, y la salida se compara con la imagen original en lugar de con una etiqueta">
+          <defs>
+            <marker id="arAe1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <!-- ============ supervised ============ -->
+          <text x="0" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">CON ETIQUETAS &#8212; las otras dos pestanas</text>
+
+          <rect x="4" y="28" width="62" height="62" rx="4" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.3"></rect>
+          <circle cx="35" cy="59" r="16" fill="var(--data)" opacity="0.55"></circle>
+          <text x="35" y="104" font-size="10.5" text-anchor="middle" fill="currentColor" opacity="0.7">imagen</text>
+
+          <rect x="4" y="114" width="84" height="24" rx="4" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.3"></rect>
+          <text x="46" y="130" font-size="10.5" font-family="monospace" text-anchor="middle" fill="var(--out)">circulo</text>
+          <text x="4" y="154" font-size="10" fill="var(--out)">una persona la escribio a mano</text>
+
+          <line x1="96" y1="59" x2="130" y2="59" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <line x1="96" y1="126" x2="130" y2="96" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+
+          <rect x="138" y="44" width="94" height="56" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.2" opacity="0.9"></rect>
+          <text x="185" y="77" font-size="11.5" text-anchor="middle" fill="currentColor">modelo</text>
+
+          <line x1="240" y1="72" x2="274" y2="72" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <text x="284" y="68" font-size="12" fill="currentColor">se corrige contra la etiqueta</text>
+          <text x="284" y="85" font-size="12" fill="currentColor">que escribio la persona</text>
+
+          <line x1="0" y1="172" x2="720" y2="172" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+
+          <!-- ============ autoencoder ============ -->
+          <text x="0" y="194" font-family="monospace" font-size="12" font-weight="600" fill="var(--out)">SIN ETIQUETAS &#8212; esta pestana</text>
+
+          <text x="206" y="212" font-size="10.5" font-weight="600" text-anchor="middle" fill="var(--out)">el objetivo es la entrada misma</text>
+          <path d="M 35,232 C 35,216 377,216 377,232" fill="none" stroke="var(--out)" stroke-width="1.6" stroke-dasharray="5 4"></path>
+
+          <rect x="4" y="236" width="62" height="62" rx="4" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.3"></rect>
+          <circle cx="35" cy="267" r="16" fill="var(--data)" opacity="0.55"></circle>
+          <text x="35" y="314" font-size="10.5" text-anchor="middle" fill="currentColor" opacity="0.7">imagen</text>
+
+          <line x1="74" y1="267" x2="100" y2="267" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <rect x="108" y="244" width="54" height="46" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.2"></rect>
+          <text x="135" y="271" font-size="10" text-anchor="middle" fill="var(--accent)">encoder</text>
+
+          <line x1="170" y1="267" x2="186" y2="267" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <rect x="194" y="258" width="26" height="18" rx="3" fill="var(--out-bg)" stroke="var(--out)" stroke-width="2"></rect>
+          <text x="207" y="271" font-size="9.5" font-weight="700" text-anchor="middle" fill="var(--out)">16</text>
+
+          <line x1="228" y1="267" x2="244" y2="267" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <rect x="252" y="244" width="54" height="46" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.2"></rect>
+          <text x="279" y="271" font-size="10" text-anchor="middle" fill="var(--accent)">decoder</text>
+
+          <line x1="314" y1="267" x2="340" y2="267" stroke="currentColor" stroke-width="1.5" marker-end="url(#arAe1)"></line>
+          <rect x="346" y="236" width="62" height="62" rx="4" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.3"></rect>
+          <circle cx="377" cy="267" r="17" fill="var(--good)" opacity="0.30"></circle>
+          <circle cx="377" cy="267" r="11" fill="var(--good)" opacity="0.30"></circle>
+          <text x="377" y="314" font-size="10.5" text-anchor="middle" fill="currentColor" opacity="0.7">reconstruccion</text>
+
+          <text x="430" y="258" font-size="12" fill="currentColor">Se compara con la IMAGEN.</text>
+          <text x="430" y="276" font-size="12" fill="currentColor">No hay una etiqueta en</text>
+          <text x="430" y="294" font-size="12" fill="currentColor">ninguna parte del proceso.</text>
+        </svg>
+        <figcaption>
+          <b>Arriba, lo que ya conocés:</b> alguien etiquetó cada imagen a mano, y el
+          modelo se corrige contra eso. Si nadie etiquetó nada, no hay nada que aprender.
+          <b>Abajo, el autoencoder:</b> entra la imagen, la aplasta hasta 16 números, la
+          vuelve a armar — y se corrige contra <em>la imagen original</em>. La flecha
+          punteada es todo el truco: el objetivo no lo escribió nadie, porque el objetivo
+          era la entrada desde el principio.
+        </figcaption>
+      </figure>
+
+      <p>
+        El autoencoder no necesita a esa persona. Su objetivo es su propia entrada, y
+        en el código de la app eso es literalmente una línea:
+      </p>
+
+      <pre><code>model.fit(imagenes, imagenes / 255.0)   <span class="cmt"># el objetivo ES la entrada</span></code></pre>
+
+      <div class="note">
+        <span class="note-label">Y las clases entonces?</span>
+        <p>
+          Los datasets de la app tienen nombres de clase, y los vas a ver en pantalla.
+          Se usan para <strong>una sola cosa</strong>: decidir qué imágenes esconder
+          (mirá <a href="#ae-anomalias">Detectar anomalías</a>). Dentro del
+          entrenamiento no entra ni una etiqueta.
+        </p>
+      </div>
+
+      <h3 id="ae-cuello">El cuello de botella</h3>
+      <p>
+        Una imagen de 32x32 en color son <strong>3.072 números</strong>. Si la capa del
+        medio tiene 16, toda la imagen tiene que pasar por 16 números. Lo que sobrevive
+        ese apretón es lo que la red decidió que importaba; lo que se borronea es lo que
+        decidió que no.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 290" role="img" aria-label="Siete barras de altura proporcional a cuántos números guarda cada capa: la imagen tiene 3072, la primera capa del encoder 4096, la segunda 2048, la capa latente apenas 16, y el decoder repite los mismos tamaños al revés hasta la salida de 3072">
+          <rect x="44" y="95.7" width="80" height="112.6" rx="4" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.4"></rect>
+          <text x="84" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--data)">Imagen</text>
+          <text x="84" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">3.072</text>
+          <text x="84" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">32x32x3</text>
+          <rect x="136" y="87.0" width="80" height="130.0" rx="4" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect>
+          <text x="176" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--accent)">Encode 1</text>
+          <text x="176" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">4.096</text>
+          <text x="176" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">16x16x16</text>
+          <rect x="228" y="106.0" width="80" height="91.9" rx="4" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect>
+          <text x="268" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--accent)">Encode 2</text>
+          <text x="268" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">2.048</text>
+          <text x="268" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">8x8x32</text>
+          <rect x="320" y="146.5" width="80" height="11.0" rx="4" fill="var(--out-bg)" stroke="var(--out)" stroke-width="2.4"></rect>
+          <text x="360" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--out)">Latente</text>
+          <text x="360" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">16</text>
+          <text x="360" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">16</text>
+          <rect x="412" y="106.0" width="80" height="91.9" rx="4" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect>
+          <text x="452" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--accent)">Decode 1</text>
+          <text x="452" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">2.048</text>
+          <text x="452" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">8x8x32</text>
+          <rect x="504" y="87.0" width="80" height="130.0" rx="4" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect>
+          <text x="544" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--accent)">Decode 2</text>
+          <text x="544" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">4.096</text>
+          <text x="544" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">16x16x16</text>
+          <rect x="596" y="95.7" width="80" height="112.6" rx="4" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.4"></rect>
+          <text x="636" y="46" font-size="11" font-weight="600" text-anchor="middle" fill="var(--good)">Salida</text>
+          <text x="636" y="252" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">3.072</text>
+          <text x="636" y="268" font-size="9.5" font-family="monospace" text-anchor="middle" fill="currentColor" opacity="0.5">32x32x3</text>
+          <line x1="364" y1="176" x2="364" y2="212" stroke="var(--out)" stroke-width="1.6"></line>
+          <text x="364" y="228" font-size="12" font-weight="600" text-anchor="middle" fill="var(--out)">16 numeros</text>
+        </svg>
+        <figcaption>
+          <b>Este es el dibujo real, no el relojito de arena de los libros.</b> Fijate en
+          <span class="ui">Encode 1</span>: guarda <strong>4.096 números, más que los
+          3.072 de la imagen original</strong>. El apretón no es gradual. Pasa de golpe,
+          en un solo paso, cuando todo se aplana hacia la capa latente. La app dibuja
+          esto con los tamaños medidos y te avisa cuando ocurre.
+        </figcaption>
+      </figure>
+
+      <div class="note trap">
+        <span class="note-label">El límite que importa</span>
+        <p>
+          Si mové el slider hasta que la capa latente sea tan grande como la imagen, la
+          app te lo prohíbe y te explica por qué: sin cuello de botella,
+          <strong>copiar la entrada se vuelve la solución más barata</strong> y la red no
+          aprende nada. El apretón no es un defecto del método. Es el método.
+        </p>
+      </div>
+
+      <h3 id="ae-piso">El piso de rendirse</h3>
+      <p>
+        Acá hay un problema de honestidad. Si te digo que tu autoencoder tiene un error
+        de <code>0.14</code>, eso no significa absolutamente nada. Necesitás saber contra
+        qué compararlo.
+      </p>
+      <p>
+        Así que la app calcula el error que sacás <strong>si te rendís</strong>: contestar
+        cada imagen con el promedio de todas. En este dataset ese número es
+        <code>0.05611</code>, y aparece siempre al lado del tuyo, en la métrica y como
+        línea punteada en el gráfico.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 300" role="img" aria-label="Error de validación por época para tres cinturas. Las tres empiezan por encima del piso de rendirse y lo cruzan en épocas distintas: latente 64 en la novena, latente 8 en la trece, latente 2 en la diecinueve">
+          <line x1="62" y1="250.0" x2="690" y2="250.0" stroke="currentColor" stroke-width="0.6" opacity="0.15"></line>
+          <text x="54" y="254.0" font-size="10" text-anchor="end" fill="currentColor" opacity="0.6">0.00</text>
+          <line x1="62" y1="198.5" x2="690" y2="198.5" stroke="currentColor" stroke-width="0.6" opacity="0.15"></line>
+          <text x="54" y="202.5" font-size="10" text-anchor="end" fill="currentColor" opacity="0.6">0.04</text>
+          <line x1="62" y1="147.0" x2="690" y2="147.0" stroke="currentColor" stroke-width="0.6" opacity="0.15"></line>
+          <text x="54" y="151.0" font-size="10" text-anchor="end" fill="currentColor" opacity="0.6">0.08</text>
+          <line x1="62" y1="95.5" x2="690" y2="95.5" stroke="currentColor" stroke-width="0.6" opacity="0.15"></line>
+          <text x="54" y="99.5" font-size="10" text-anchor="end" fill="currentColor" opacity="0.6">0.12</text>
+          <line x1="62" y1="44.0" x2="690" y2="44.0" stroke="currentColor" stroke-width="0.6" opacity="0.15"></line>
+          <text x="54" y="48.0" font-size="10" text-anchor="end" fill="currentColor" opacity="0.6">0.16</text>
+          <text x="62.0" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">1</text>
+          <text x="166.7" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">5</text>
+          <text x="297.5" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">10</text>
+          <text x="428.3" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">15</text>
+          <text x="559.2" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">20</text>
+          <text x="690.0" y="268" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">25</text>
+          <line x1="62" y1="177.8" x2="690" y2="177.8" stroke="currentColor" stroke-width="1.8" stroke-dasharray="6 4" opacity="0.8"></line>
+          <text x="690" y="169.8" font-size="11" font-weight="600" text-anchor="end" fill="currentColor">rendirse = 0.0561</text>
+          <polyline points="62.0,64.5 88.2,64.9 114.3,60.3 140.5,54.6 166.7,50.1 192.8,48.1 219.0,48.2 245.2,51.8 271.3,60.0 297.5,74.6 323.7,89.0 349.8,104.3 376.0,124.8 402.2,156.5 428.3,166.6 454.5,167.4 480.7,171.3 506.8,175.6 533.0,178.9 559.2,181.4 585.3,190.9 611.5,200.0 637.7,205.7 663.8,205.4 690.0,196.3" fill="none" stroke="var(--bad)" stroke-width="2.2"></polyline>
+          <circle cx="533.0" cy="178.9" r="4.5" fill="var(--surface)" stroke="var(--bad)" stroke-width="2.2"></circle>
+          <polyline points="62.0,64.5 88.2,67.5 114.3,71.1 140.5,72.4 166.7,72.7 192.8,75.7 219.0,90.6 245.2,103.9 271.3,116.5 297.5,128.0 323.7,144.0 349.8,162.6 376.0,180.2 402.2,195.0 428.3,206.1 454.5,213.6 480.7,218.1 506.8,221.5 533.0,223.2 559.2,224.5 585.3,225.4 611.5,226.3 637.7,226.9 663.8,227.6 690.0,228.5" fill="none" stroke="var(--out)" stroke-width="2.2"></polyline>
+          <circle cx="376.0" cy="180.2" r="4.5" fill="var(--surface)" stroke="var(--out)" stroke-width="2.2"></circle>
+          <polyline points="62.0,72.8 88.2,101.2 114.3,120.6 140.5,129.4 166.7,134.6 192.8,140.7 219.0,151.1 245.2,160.4 271.3,178.1 297.5,195.2 323.7,210.2 349.8,221.0 376.0,227.7 402.2,231.3 428.3,232.6 454.5,233.2 480.7,233.2 506.8,233.9 533.0,234.5 559.2,234.7 585.3,234.6 611.5,235.5 637.7,235.7 663.8,235.3 690.0,235.0" fill="none" stroke="var(--good)" stroke-width="2.2"></polyline>
+          <circle cx="271.3" cy="178.1" r="4.5" fill="var(--surface)" stroke="var(--good)" stroke-width="2.2"></circle>
+          <line x1="62" y1="44" x2="62" y2="250" stroke="currentColor" stroke-width="1.2" opacity="0.5"></line>
+          <line x1="62" y1="250" x2="690" y2="250" stroke="currentColor" stroke-width="1.2" opacity="0.5"></line>
+          <text x="376" y="288" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">epoca</text>
+          <line x1="96" y1="28" x2="116" y2="28" stroke="var(--good)" stroke-width="2.6"></line>
+          <text x="123" y="32" font-size="11.5" font-weight="600" fill="var(--good)">latente 64</text>
+          <line x1="246" y1="28" x2="266" y2="28" stroke="var(--out)" stroke-width="2.6"></line>
+          <text x="273" y="32" font-size="11.5" font-weight="600" fill="var(--out)">latente 8</text>
+          <line x1="396" y1="28" x2="416" y2="28" stroke="var(--bad)" stroke-width="2.6"></line>
+          <text x="423" y="32" font-size="11.5" font-weight="600" fill="var(--bad)">latente 2</text>
+        </svg>
+        <figcaption>
+          <b>Las tres arrancan PEOR que rendirse.</b> Un decoder recién nacido contesta
+          gris medio, y estas imágenes son casi todas oscuras, así que lo primero que
+          tiene que aprender es el brillo general — no las formas. El círculo marca la
+          época en que cada cintura finalmente le gana al piso:
+          <strong>la 9 con latente 64, la 13 con latente 8, la 19 con latente 2</strong>.
+          Cuanto más angosta la cintura, más tarda en dejar de ser inútil.
+        </figcaption>
+      </figure>
+
+      <div class="note warn">
+        <span class="note-label">Por eso la app se niega a concluir</span>
+        <p>
+          Si corrés la comparación con 3 épocas, los tres brazos van a terminar casi
+          iguales. La app <strong>no</strong> te dice «la cintura no importa». Te dice
+          <code>NO CONCLUSION IS AVAILABLE FROM THIS RUN</code> y te explica que ninguno
+          empezó a aprender todavía. Empatar y no haber arrancado no son lo mismo.
+        </p>
+      </div>
+
+      <h3 id="ae-etapas">Las cuatro etapas</h3>
+
+      <h4>Etapa 1 · Images</h4>
+      <p>
+        El mismo panel que en la CNN: formas sintéticas, un pedazo de CIFAR-10, o tu
+        carpeta de fotos. Arrancá con formas de 32px: la lección entera se ve en menos
+        de un minuto.
+      </p>
+
+      <h4>Etapa 2 · Architecture</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="ui">Slider latente</span></td>
+              <td>
+                <strong>El control por el que existe esta pestaña.</strong> Cuántos
+                números tiene que atravesar la imagen entera. Arriba te muestra en vivo
+                la compresión: <code>3.072 -&gt; 16 (192x squeeze)</code>.
+              </td>
+            </tr>
+            <tr><td><span class="ui">Convolutional / Dense</span></td><td>El convolucional conserva la geometría (un píxel sigue al lado de sus vecinos). El denso aplana primero, así que tiene que <em>reaprender</em> que el píxel 1 está pegado al 2. Comparalos con la misma cintura.</td></tr>
+            <tr><td><span class="ui">Stages</span></td><td>Cuántas veces se achica la imagen a la mitad al entrar, y se agranda al salir.</td></tr>
+            <tr><td><span class="ui">Base filters</span></td><td>Cuántos filtros arranca usando el encoder.</td></tr>
+            <tr><td><span class="ui">Denoising</span></td><td><strong>Le ensucia la entrada y lo califica contra la imagen limpia.</strong> Le estás pidiendo que repare un daño que nadie le describió.</td></tr>
+            <tr><td><span class="ui">Noise</span></td><td>Cuánta suciedad. Solo se aplica mientras entrena, nunca al predecir.</td></tr>
+            <tr><td><span class="ui">Hold out</span></td><td>Saca una clase del entrenamiento <strong>por completo</strong>. No «pocas veces»: cero veces. Ver <a href="#ae-anomalias">anomalías</a>.</td></tr>
+            <tr><td><span class="ui">Preset: sweep the bottleneck</span></td><td>Deja todo listo para comparar latente 2, 8 y 64. 25 épocas por brazo, medido: es donde los brazos realmente se separan.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Etapa 3 · Training</h4>
+      <p>
+        Las mismas épocas y lotes que ya conocés, más la métrica que hace legible al
+        loss:
+      </p>
+      <pre><code>Epoch        Val MSE      vs giving up
+   12        0.03184        1.8x better</code></pre>
+      <p>
+        Y un botón que no existe en las otras pestañas:
+        <span class="ui">Compare latent sizes</span>. Entrena el mismo autoencoder con
+        tres cinturas distintas desde los mismos pesos iniciales y apila los resultados.
+        Medido sobre 900 formas de 32px, 25 épocas por brazo, <strong>61 segundos los
+        tres</strong>:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Latente</th><th>Compresión</th><th>Val MSE</th><th>Contra el piso de 0.0561</th></tr></thead>
+          <tbody>
+            <tr><td><code>2</code></td><td>1536x</td><td>0.0417</td><td>1.3x mejor — apenas una reconstrucción</td></tr>
+            <tr><td><code>8</code></td><td>384x</td><td>0.0167</td><td>3.4x mejor — las formas se reconocen</td></tr>
+            <tr><td><code>64</code></td><td>48x</td><td>0.0117</td><td>4.8x mejor — los bordes se afilan</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Etapa 4 · Reconstruct</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Botón</th><th>Qué pregunta responde</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Show reconstructions</span></td><td>Cómo se ve la salida al lado de la entrada?</td></tr>
+            <tr><td><span class="ui">Show the hardest to rebuild</span></td><td>Qué imágenes le resultaron menos familiares a este modelo?</td></tr>
+            <tr><td><span class="ui">Score the held-out class</span></td><td>La clase que nunca vio, se reconstruye peor? Cuánto peor?</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Las filas están alineadas columna por columna a propósito: <strong>una misma
+        foto, una cintura por fila</strong>. Leé una columna de arriba a abajo. El número
+        debajo de cada imagen es el error de esa imagen sola.
+      </p>
+
+      <h3 id="ae-gris">Por qué salen grises</h3>
+      <p>
+        Lo primero que nota todo el mundo: las formas vuelven, pero el color no. No es un
+        error de la app, y acá está lo interesante —
+        <strong>hay dos causas distintas que en pantalla se ven idénticas</strong>.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Corrida</th><th>Color que conserva</th><th>Correlación</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td>latente 64, 25 épocas</td><td>6%</td><td><code>+0.03</code></td><td>todavía no convergió</td></tr>
+            <tr><td>latente 64, 90 épocas</td><td>66%</td><td><code>+0.91</code></td><td>tenía lugar, le faltaba <em>tiempo</em></td></tr>
+            <tr><td>latente 8, 90 épocas</td><td>14%</td><td><code>+0.06</code></td><td>no hay <em>lugar</em>; el tiempo no ayuda</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El error cuadrático se lo lleva casi todo poner una forma brillante en el lugar
+        correcto, así que eso es lo primero que compra el descenso por gradiente. El
+        color es una corrección más chica, que llega después — <em>si la cintura todavía
+        puede pagarla</em>.
+      </p>
+      <div class="note">
+        <span class="note-label">La lección</span>
+        <p>
+          El cuello de botella no borronea parejo. Impone un
+          <strong>orden de prioridades</strong>: primero la posición, después la forma,
+          y al final el color. Cuando mirás esas filas grises estás viendo a la red
+          decidir qué puede permitirse.
+        </p>
+      </div>
+
+      <h3 id="ae-anomalias">Detectar lo que nunca viste</h3>
+      <p>
+        Poné <span class="ui">Hold out</span> en <code>triangle</code> y entrená. El
+        modelo ve círculos y cuadrados, nunca un triángulo. Después le mostrás triángulos
+        y medís cuánto peor los reconstruye.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 250" role="img" aria-label="Dos distribuciones de error de reconstrucción que se solapan parcialmente: las clases familiares se concentran en un error bajo de 0.029 y los triángulos que el modelo nunca vio en un error más alto de 0.038">
+          <polygon points="56,210 56.0,208.4 63.5,207.9 71.1,207.2 78.7,206.3 86.2,205.2 93.8,203.8 101.3,202.1 108.8,200.0 116.4,197.5 123.9,194.4 131.5,190.8 139.0,186.6 146.6,181.7 154.1,176.1 161.7,169.8 169.2,162.8 176.8,155.1 184.3,146.7 191.9,137.8 199.5,128.3 207.0,118.5 214.5,108.5 222.1,98.5 229.6,88.6 237.2,79.1 244.8,70.2 252.3,62.1 259.8,55.0 267.4,49.2 274.9,44.6 282.5,41.6 290.0,40.1 297.6,40.3 305.1,42.0 312.7,45.3 320.2,50.1 327.8,56.2 335.3,63.5 342.9,71.7 350.4,80.7 358.0,90.3 365.5,100.2 373.1,110.2 380.6,120.2 388.2,130.0 395.8,139.3 403.3,148.2 410.9,156.5 418.4,164.1 426.0,171.0 433.5,177.1 441.0,182.6 448.6,187.3 456.1,191.5 463.7,195.0 471.2,197.9 478.8,200.4 486.4,202.4 493.9,204.1 501.5,205.4 509.0,206.5 516.5,207.4 524.1,208.0 531.6,208.5 539.2,208.9 546.8,209.2 554.3,209.4 561.9,209.6 569.4,209.7 577.0,209.8 584.5,209.9 592.1,209.9 599.6,209.9 607.2,210.0 614.7,210.0 622.2,210.0 629.8,210.0 637.4,210.0 644.9,210.0 652.5,210.0 660.0,210.0 660,210" fill="var(--good)" opacity="0.30"></polygon>
+          <polyline points="56.0,208.4 63.5,207.9 71.1,207.2 78.7,206.3 86.2,205.2 93.8,203.8 101.3,202.1 108.8,200.0 116.4,197.5 123.9,194.4 131.5,190.8 139.0,186.6 146.6,181.7 154.1,176.1 161.7,169.8 169.2,162.8 176.8,155.1 184.3,146.7 191.9,137.8 199.5,128.3 207.0,118.5 214.5,108.5 222.1,98.5 229.6,88.6 237.2,79.1 244.8,70.2 252.3,62.1 259.8,55.0 267.4,49.2 274.9,44.6 282.5,41.6 290.0,40.1 297.6,40.3 305.1,42.0 312.7,45.3 320.2,50.1 327.8,56.2 335.3,63.5 342.9,71.7 350.4,80.7 358.0,90.3 365.5,100.2 373.1,110.2 380.6,120.2 388.2,130.0 395.8,139.3 403.3,148.2 410.9,156.5 418.4,164.1 426.0,171.0 433.5,177.1 441.0,182.6 448.6,187.3 456.1,191.5 463.7,195.0 471.2,197.9 478.8,200.4 486.4,202.4 493.9,204.1 501.5,205.4 509.0,206.5 516.5,207.4 524.1,208.0 531.6,208.5 539.2,208.9 546.8,209.2 554.3,209.4 561.9,209.6 569.4,209.7 577.0,209.8 584.5,209.9 592.1,209.9 599.6,209.9 607.2,210.0 614.7,210.0 622.2,210.0 629.8,210.0 637.4,210.0 644.9,210.0 652.5,210.0 660.0,210.0" fill="none" stroke="var(--good)" stroke-width="2"></polyline>
+          <polygon points="56,210 56.0,210.0 63.5,210.0 71.1,210.0 78.7,210.0 86.2,210.0 93.8,210.0 101.3,210.0 108.8,210.0 116.4,210.0 123.9,210.0 131.5,210.0 139.0,210.0 146.6,210.0 154.1,209.9 161.7,209.9 169.2,209.8 176.8,209.7 184.3,209.5 191.9,209.2 199.5,208.8 207.0,208.2 214.5,207.4 222.1,206.3 229.6,204.8 237.2,202.8 244.8,200.1 252.3,196.7 259.8,192.4 267.4,187.1 274.9,180.6 282.5,173.0 290.0,164.1 297.6,154.0 305.1,142.8 312.7,130.7 320.2,117.9 327.8,104.8 335.3,91.7 342.9,79.2 350.4,67.7 358.0,57.7 365.5,49.6 373.1,43.8 380.6,40.6 388.2,40.2 395.8,42.4 403.3,47.4 410.9,54.7 418.4,64.2 426.0,75.2 433.5,87.5 441.0,100.4 448.6,113.6 456.1,126.5 463.7,138.9 471.2,150.4 478.8,160.9 486.4,170.2 493.9,178.2 501.5,185.1 509.0,190.7 516.5,195.4 524.1,199.1 531.6,202.0 539.2,204.2 546.8,205.9 554.3,207.1 561.9,208.0 569.4,208.6 577.0,209.1 584.5,209.4 592.1,209.6 599.6,209.8 607.2,209.8 614.7,209.9 622.2,209.9 629.8,210.0 637.4,210.0 644.9,210.0 652.5,210.0 660.0,210.0 660,210" fill="var(--bad)" opacity="0.30"></polygon>
+          <polyline points="56.0,210.0 63.5,210.0 71.1,210.0 78.7,210.0 86.2,210.0 93.8,210.0 101.3,210.0 108.8,210.0 116.4,210.0 123.9,210.0 131.5,210.0 139.0,210.0 146.6,210.0 154.1,209.9 161.7,209.9 169.2,209.8 176.8,209.7 184.3,209.5 191.9,209.2 199.5,208.8 207.0,208.2 214.5,207.4 222.1,206.3 229.6,204.8 237.2,202.8 244.8,200.1 252.3,196.7 259.8,192.4 267.4,187.1 274.9,180.6 282.5,173.0 290.0,164.1 297.6,154.0 305.1,142.8 312.7,130.7 320.2,117.9 327.8,104.8 335.3,91.7 342.9,79.2 350.4,67.7 358.0,57.7 365.5,49.6 373.1,43.8 380.6,40.6 388.2,40.2 395.8,42.4 403.3,47.4 410.9,54.7 418.4,64.2 426.0,75.2 433.5,87.5 441.0,100.4 448.6,113.6 456.1,126.5 463.7,138.9 471.2,150.4 478.8,160.9 486.4,170.2 493.9,178.2 501.5,185.1 509.0,190.7 516.5,195.4 524.1,199.1 531.6,202.0 539.2,204.2 546.8,205.9 554.3,207.1 561.9,208.0 569.4,208.6 577.0,209.1 584.5,209.4 592.1,209.6 599.6,209.8 607.2,209.8 614.7,209.9 622.2,209.9 629.8,210.0 637.4,210.0 644.9,210.0 652.5,210.0 660.0,210.0" fill="none" stroke="var(--bad)" stroke-width="2"></polyline>
+          <line x1="56" y1="210" x2="660" y2="210" stroke="currentColor" stroke-width="1.2" opacity="0.5"></line>
+          <text x="106.3" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.01</text>
+          <text x="207.0" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.02</text>
+          <text x="307.7" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.03</text>
+          <text x="408.3" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.04</text>
+          <text x="509.0" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.05</text>
+          <text x="609.7" y="228" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.6">0.06</text>
+          <line x1="293.2" y1="40" x2="293.2" y2="210" stroke="var(--good)" stroke-width="1.2" stroke-dasharray="4 3"></line>
+          <line x1="385.7" y1="40" x2="385.7" y2="210" stroke="var(--bad)" stroke-width="1.2" stroke-dasharray="4 3"></line>
+          <text x="287.2" y="34" font-size="11" font-weight="600" text-anchor="end" fill="var(--good)">familiares 0.0286</text>
+          <text x="391.7" y="34" font-size="11" font-weight="600" fill="var(--bad)">triangulos 0.0378</text>
+          <text x="358" y="248" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">error de reconstruccion</text>
+          <rect x="536" y="56" width="150" height="58" rx="6" fill="var(--surface-2)" stroke="var(--rule)" stroke-width="1"></rect>
+          <text x="611" y="80" font-size="15" font-weight="700" text-anchor="middle" fill="currentColor">AUC 0.836</text>
+          <text x="611" y="99" font-size="10.5" text-anchor="middle" fill="currentColor" opacity="0.7">los ordena bien el 84%</text>
+        </svg>
+        <figcaption>
+          <b>Se solapan, y eso es lo honesto.</b> No es un detector perfecto: es un
+          detector <em>útil</em>, construido sin un solo ejemplo de lo que detecta. El
+          AUC de <code>0.836</code> dice exactamente esto: si agarrás una imagen familiar
+          y un triángulo al azar, el error los ordena bien el <strong>84% de las
+          veces</strong>.
+        </figcaption>
+      </figure>
+
+      <p>
+        Por eso los autoencoders se usan de verdad para fallas, fraude y defectos:
+        <strong>las anomalías de las que todavía no tenés ejemplos</strong>. No podés
+        entrenar un clasificador para una falla que nunca ocurrió, pero sí podés
+        entrenar algo que sepa cómo se ve lo normal.
+      </p>
+
+      <div class="note trap">
+        <span class="note-label">Y acá viene lo contraintuitivo</span>
+        <p>
+          El autoencoder que reconstruye <em>mejor</em> es el <em>peor</em> detector.
+          Medido, mismo dataset, mismas 25 épocas:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Latente</th><th>Error en familiares</th><th>Error en triángulos</th><th>AUC</th></tr></thead>
+            <tbody>
+              <tr><td><code>8</code></td><td>0.0286</td><td>0.0378 (1.32x peor)</td><td><strong>0.836</strong></td></tr>
+              <tr><td><code>64</code></td><td>0.0159</td><td>0.0168 (1.06x peor)</td><td>0.611</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Latente 64 reconstruye casi el doble de bien… y detecta mucho peor. Por qué?
+          Porque una cintura ancha <strong>generaliza tan bien que también reconstruye lo
+          que nunca vio</strong>. Para detectar anomalías no querés el mejor
+          reconstructor: querés uno lo bastante apretado como para que solo le salga bien
+          lo que conoce.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 8 -->
     <section id="experimentos">
-      <h2><span class="chapter">07</span>Siete experimentos</h2>
+      <h2><span class="chapter">08</span>Once experimentos</h2>
       <p class="section-lede">
         Acá está lo que más te va a enseñar. Cada uno rompe algo a propósito, porque ver
         fallar una red enseña más que verla funcionar.
@@ -1791,11 +2233,55 @@ pip install -r requirements.txt</pre>
           <dt class="lesson">Aprendiste</dt><dd class="lesson">Que una arquitectura no es mejor «en abstracto»: es mejor <em>para una forma de datos</em>.</dd>
         </dl>
       </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">08</span><h3>Barré el cuello de botella</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Autoencoder · <span class="ui">Synthetic shapes</span>, 900 imágenes</dd>
+          <dt>Hacé</dt><dd>Apretá <span class="ui">Preset: sweep the bottleneck</span> y después <span class="ui">Compare latent sizes</span>. Tarda un minuto.</dd>
+          <dt>Vas a ver</dt><dd>Cuatro filas alineadas. Latente 2 devuelve un borrón sin forma; latente 8 ya te trae círculos y cuadrados reconocibles; latente 64 afila los bordes.</dd>
+          <dt>Por qué</dt><dd>La cintura es un <strong>presupuesto</strong>. Con 2 números no se puede describir una figura, solo dónde había algo brillante.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Que «comprimir» no es perder calidad parejo: es elegir qué guardar. Leé una columna de arriba a abajo.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">09</span><h3>Pedile lo imposible: latente 1</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Autoencoder · formas sintéticas</dd>
+          <dt>Hacé</dt><dd>Arrastrá el slider latente hasta <code>1</code>. Entrená 25 épocas.</dd>
+          <dt>Vas a ver</dt><dd>Un número por imagen. Todas las salidas se parecen entre sí.</dd>
+          <dt>Por qué</dt><dd>Con un solo número no hay forma de distinguir un círculo arriba a la izquierda de un cuadrado abajo a la derecha. El decoder hace lo único que puede: un promedio.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Ahora subilo a <code>256</code>. La app te avisa cuando la cintura deja de ser cintura y copiar la entrada se vuelve la respuesta más barata.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">10</span><h3>Preguntá por qué salen grises</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Autoencoder · formas sintéticas, latente 64</dd>
+          <dt>Hacé</dt><dd>Entrená 25 épocas y mirá el color. Después entrená <strong>90</strong> y mirá otra vez.</dd>
+          <dt>Vas a ver</dt><dd>A las 25 épocas, grises. A las 90, los colores vuelven casi perfectos.</dd>
+          <dt>Por qué</dt><dd>El error se lo lleva poner la forma en su lugar, así que eso se arregla primero. El color es una corrección chica que llega después.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Repetilo con latente 8 y 90 épocas: <strong>el color nunca vuelve</strong>. Dos fallas que se ven iguales y no son iguales — una es falta de tiempo, la otra falta de lugar.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">11</span><h3>Detectá algo que nunca viste</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Autoencoder · formas sintéticas, 3 clases</dd>
+          <dt>Hacé</dt><dd>En Architecture poné <span class="ui">Hold out</span> en <code>triangle</code>, latente 8, 25 épocas. Entrená y apretá <span class="ui">Score the held-out class</span>.</dd>
+          <dt>Vas a ver</dt><dd>Los triángulos se reconstruyen 1.32x peor, con un AUC de 0.836. El modelo nunca vio ni uno.</dd>
+          <dt>Por qué</dt><dd>Solo aprendió a reconstruir círculos y cuadrados. Un triángulo le queda grande, y el error lo delata.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Ahora repetilo con latente <code>64</code>. El AUC <strong>baja a 0.611</strong>: reconstruye mejor, detecta peor. Una cintura ancha generaliza tanto que también reconstruye lo que nunca vio.</dd>
+        </dl>
+      </div>
     </section>
 
     <!-- ============================================================ 8 -->
     <section id="glosario">
-      <h2><span class="chapter">08</span>Glosario</h2>
+      <h2><span class="chapter">09</span>Glosario</h2>
       <p class="section-lede">Las palabras que más vas a leer, en una línea cada una.</p>
 
       <dl class="glossary">
@@ -1819,6 +2305,16 @@ pip install -r requirements.txt</pre>
         <div><dt>Backbone</dt><dd>La red grande preentrenada que usás como base en transfer learning.</dd></div>
         <div><dt>Transfer learning</dt><dd>Reusar una red ya entrenada y enseñarle solo tus clases.</dd></div>
         <div><dt>Invarianza traslacional</dt><dd>Reconocer algo sin importar en qué parte de la imagen esté.</dd></div>
+        <div><dt>Autoencoder</dt><dd>Una red que aprende a devolver su propia entrada a través de una capa demasiado chica para que pase entera.</dd></div>
+        <div><dt>Aprendizaje no supervisado</dt><dd>Aprender sin etiquetas: nadie escribió la respuesta correcta en ninguna parte.</dd></div>
+        <div><dt>Cuello de botella (latente)</dt><dd>La capa chica del medio. Cuántos números tiene que atravesar la imagen entera.</dd></div>
+        <div><dt>Código latente</dt><dd>Los números que salen del cuello de botella. La versión comprimida de la imagen.</dd></div>
+        <div><dt>Reconstrucción</dt><dd>La imagen que el decoder arma a partir del código latente.</dd></div>
+        <div><dt>Error de reconstrucción</dt><dd>Cuánto se diferencia la salida de la entrada. Acá reemplaza al accuracy.</dd></div>
+        <div><dt>Piso de rendirse</dt><dd>El error de contestar cada imagen con el promedio de todas. Si no le ganás, no aprendiste nada.</dd></div>
+        <div><dt>Denoising</dt><dd>Entrenar con la entrada sucia y calificar contra la limpia, para que aprenda a reparar.</dd></div>
+        <div><dt>Detección de anomalías</dt><dd>Usar el error de reconstrucción para marcar lo que el modelo nunca vio.</dd></div>
+        <div><dt>AUC</dt><dd>Agarrás uno normal y uno raro al azar: qué tan seguido los ordena bien. 0.5 es tirar una moneda.</dd></div>
       </dl>
 
       <div class="note" style="margin-top:32px">

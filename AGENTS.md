@@ -339,6 +339,9 @@ defaults or the model code, re-measure before editing the claims.
 | Autoencoder cost on CPU | ~0.7s per epoch at 720 images; all three sweep arms in **61s** |
 | Colour recovery, latent 64 | red-minus-blue correlation +0.03 at 25 epochs, **+0.91 at 90** |
 | Colour recovery, latent 8 | +0.06 even at 90 epochs — that waist never affords colour |
+| When each waist beats the give-up floor | latent 64 at epoch **9**, latent 8 at **13**, latent 2 at **19** |
+| Anomaly detection, hold out `triangle`, 25 epochs, latent 8 | familiar 0.0286, held-out 0.0378 (1.32x worse), **ROC AUC 0.836** |
+| The same, latent 64 | familiar 0.0159, held-out 0.0168 (1.06x worse), **ROC AUC 0.611** |
 
 The 50-layer row is the important one, and the diagnostic is **training**
 accuracy: a deep plain stack that cannot fit its own training data is failing
@@ -353,6 +356,15 @@ while at latent 8 it never arrives at all. `COLOUR_NOTE` in
 `core/autoencoder_trainer.py` keeps them apart. Do not collapse it into "the
 bottleneck loses colour" — that would be wrong in one of the two cases, and it
 is the case a curious student is most likely to test.
+
+The two anomaly rows carry the workspace's most counter-intuitive result, and
+it is deliberate: **the autoencoder that reconstructs better is the worse
+detector.** Latent 64 halves the reconstruction error of latent 8 and its ROC
+AUC collapses from 0.836 to 0.611, because a wide waist generalises well
+enough to rebuild the class it never saw. Anomaly detection does not want the
+best reconstructor, it wants one tight enough that only the familiar comes out
+right. `format_anomalies()` already points a weak separation at the latent
+size; do not "improve" it by suggesting a wider waist.
 
 ---
 
@@ -374,11 +386,7 @@ Honest list, roughly by value:
 4. **No feature-map visualisation** for the CNN. Showing what the first
    convolution actually responds to is the most "see how it works" thing still
    missing.
-5. **`manual.html` does not cover the autoencoder.** The Spanish student
-   manual has eight chapters and stops at the convolutional workspace. The
-   bottleneck, the give-up floor and the grey-colour result are the most
-   visual lessons in the app and none of them are in the manual yet.
-6. `nnstudio/ui/vision_workspace.py`, `dense_workspace.py` and
+5. `nnstudio/ui/vision_workspace.py`, `dense_workspace.py` and
    `autoencoder_workspace.py` share a fair
    amount of orchestration shape. Extracting a common base is tempting —
    resist it unless the duplication actually hurts, because the independence of

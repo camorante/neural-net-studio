@@ -18,7 +18,7 @@ called out where they appear.
 
 | You want to… | Go to |
 |---|---|
-| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) |
+| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 9 chapters, 14 hand-drawn figures |
 | Install and run it | [Install](#install) below |
 | Understand the code before changing it | [`AGENTS.md`](AGENTS.md) |
 | Just try something and break it | [Experiments](#experiments-worth-running) |
@@ -386,6 +386,26 @@ Squared error is dominated by putting a bright shape in the right place, so
 that is what gradient descent buys first. Colour is a smaller correction it
 reaches later - if the waist can still afford it. The bottleneck does not blur
 evenly; it imposes a priority order, and this is a student watching it choose.
+
+### Anomaly detection, and its counter-intuitive result
+
+Hold a class out and the autoencoder becomes a detector for something it has
+no examples of. Measured, same dataset, 25 epochs, `triangle` withheld:
+
+| Latent | Error on familiar | Error on `triangle` | ROC AUC |
+|---|---|---|---|
+| 8 | 0.0286 | 0.0378 (1.32x worse) | **0.836** |
+| 64 | 0.0159 | 0.0168 (1.06x worse) | 0.611 |
+
+**The autoencoder that reconstructs better is the worse detector.** Latent 64
+halves the reconstruction error and its AUC collapses, because a wide waist
+generalises well enough to rebuild the class it never saw. Anomaly detection
+does not want the best reconstructor - it wants one tight enough that only the
+familiar comes out right.
+
+Also worth knowing, and it follows the same logic: the narrower the waist, the
+longer it takes to become useful at all. Latent 64 beats the give-up floor at
+epoch 9, latent 8 at epoch 13, latent 2 not until epoch 19.
 
 ## Troubleshooting
 
