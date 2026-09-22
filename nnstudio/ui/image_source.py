@@ -1,4 +1,10 @@
-"""CNN stage 1: choose an image source and build the dataset."""
+"""Stage 1 for any workspace that trains on images: pick a source, build it.
+
+This panel knows about `core.vision` and nothing else - not classifiers, not
+autoencoders. It lives here rather than inside one workspace's folder
+because two workspaces need it, and a workspace reaching into a sibling's
+private folder is exactly the coupling the layout is meant to prevent.
+"""
 from __future__ import annotations
 
 from PyQt6.QtCore import pyqtSignal
@@ -23,8 +29,8 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from ...core import vision as vz
-from ..widgets import compact_combo, hint, scrollable
+from ..core import vision as vz
+from .widgets import compact_combo, hint, scrollable
 
 SOURCE_LABELS = (
     "Synthetic shapes - generated offline",
@@ -45,7 +51,7 @@ def _eta(seconds: float) -> str:
     return f"{minutes / 60:.1f} h"
 
 
-class VisionImagesPanel(QWidget):
+class ImageSourcePanel(QWidget):
     """Source selection and dataset construction."""
 
     build_requested = pyqtSignal(object, str)

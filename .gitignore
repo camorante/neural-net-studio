@@ -234,3 +234,6 @@ cifar-10-python.tar.gz
 
 # Scratch dir left behind by tooling
 .atl/
+
+# CodeGraph index - per checkout, never shared between clones
+.codegraph/

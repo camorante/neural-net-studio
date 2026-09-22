@@ -185,6 +185,31 @@ QComboBox QAbstractItemView {{
     padding: 4px;
 }}
 
+/* The latent-size control is the one knob in the app that teaches by being
+   dragged, so it gets a real track and a grabbable handle rather than the
+   Fusion default, which is nearly invisible on this background. */
+QSlider::groove:horizontal {{
+    height: 6px;
+    background-color: {SURFACE_ALT};
+    border: 1px solid {BORDER};
+    border-radius: 3px;
+}}
+QSlider::sub-page:horizontal {{
+    background-color: {ACCENT_DEEP};
+    border: 1px solid {ACCENT_DEEP};
+    border-radius: 3px;
+}}
+QSlider::handle:horizontal {{
+    width: 16px;
+    height: 16px;
+    margin: -6px 0px;
+    border-radius: 8px;
+    background-color: {ACCENT};
+    border: 2px solid {BACKGROUND};
+}}
+QSlider::handle:horizontal:hover {{ background-color: {ACCENT_HOVER}; }}
+QSlider::handle:horizontal:disabled {{ background-color: #3E4A66; }}
+
 QCheckBox {{ spacing: 8px; }}
 QCheckBox::indicator {{
     width: 16px;

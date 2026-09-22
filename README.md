@@ -81,23 +81,29 @@ before epoch 1 - that is TensorFlow loading. The import is deferred into the
 training thread on purpose, so startup never blocks on it. The log says
 `Loading TensorFlow...` while it happens.
 
-## Two workspaces
+## Three workspaces
 
 The window opens on a mode selector, not a step list:
 
 ```
-[ Dense network (NN) ]   [ Convolutional (CNN) ]
-        |                          |
-   1. Data                    1. Images
-   2. Architecture            2. Architecture
-   3. Training                3. Training
-   4. Predict                 4. Predict
+[ Dense network (NN) ]   [ Convolutional (CNN) ]   [ Autoencoder (no labels) ]
+        |                          |                          |
+   1. Data                    1. Images                  1. Images
+   2. Architecture            2. Architecture            2. Architecture
+   3. Training                3. Training                3. Training
+   4. Predict                 4. Predict                 4. Reconstruct
 ```
 
-A convolutional network is not a later stage of a dense one - it is a
-different path, with different data, a different architecture vocabulary and
-different failure modes. So each gets its own four stages, its own model, its
-own workers and its own diagrams. Training one leaves the other untouched.
+A convolutional network is not a later stage of a dense one, and an
+autoencoder is not a later stage of either - it is the only one here that
+never sees a label. Each is a different path, with different data, a different
+architecture vocabulary and different failure modes. So each gets its own four
+stages, its own model, its own workers and its own diagrams. Training one
+leaves the others untouched.
+
+The three share the theme, the plotting widgets, and - between the two image
+workspaces - the image-source panel, which knows about `core/vision.py` and
+nothing about any particular kind of network.
 
 ## The dense workspace
 
@@ -194,6 +200,10 @@ takes a couple of minutes.
 | 5 | `Wine`, change `Random seed` to 0, 1, 7, 99 | The accuracy moves several points with nothing else changed. With 36 validation rows one sample is worth 2.78 points. Then run **Cross-validate**. |
 | 6 | CNN: **Compare skip on/off**, then **Preset: 50 layers** and compare again | At 8 layers the shortcut buys speed. At 50 the plain arm cannot fit even its training data — that is the failure ResNet was built to fix. |
 | 7 | CNN: turn **Move** off and rebuild the dataset | Without translation there is nothing for translation invariance to buy. An architecture is not better in the abstract, only for a shape of data. |
+| 8 | Autoencoder: **Preset: sweep the bottleneck**, then **Compare latent sizes** | Latent 2 returns a featureless blob, latent 8 returns recognisable circles and squares, latent 64 sharpens the edges. Measured: val MSE 0.042 / 0.017 / 0.012 against a give-up floor of 0.056. |
+| 9 | Autoencoder: drag the latent slider to 1, then train | One number per image. The decoder can only place a smear of brightness. The bottleneck is a budget, and you just set it to nothing. |
+| 10 | Autoencoder: run the sweep, then look at the **colour** | The shapes come back grey. At latent 64 that is only a matter of time - colour returns by ~90 epochs. At latent 8 it never returns at all. Two different failures that look identical. |
+| 11 | Autoencoder: **Hold out** one shape class, train, then **Score the held-out class** | An anomaly detector built with no examples of the anomaly. The class it never saw rebuilds measurably worse, and the ROC AUC says by how much. |
 
 `manual.html` walks through all seven in Spanish, with what to expect and why.
 
@@ -255,6 +265,127 @@ true: the big dataset existed, it just was not yours.
 
 A frozen backbone is also kept in inference mode, so its batch-norm statistics
 do not drift while it is supposedly frozen.
+
+## The autoencoder workspace
+
+This is the only workspace where the network is never told the answer. It is
+handed an image and asked to give the same image back, after forcing it
+through a layer too small to carry it. The loss compares the output to the
+input. There is no label anywhere in it:
+
+```python
+model.fit(x_train, x_train / 255.0, ...)   # the target IS the input
+```
+
+Class names still appear, because the datasets have them, but they are used
+for exactly one thing: deciding which images to withhold. Nothing in the
+training loop ever sees one.
+
+### 1. Images
+
+The same panel as the convolutional workspace - synthetic shapes, a CIFAR-10
+slice, or a folder of your own images. Shapes at 32px are the right place to
+start; the whole lesson is visible in under a minute.
+
+### 2. Architecture
+
+The **latent slider** is what this workspace exists for. It sets how many
+numbers the entire image must squeeze through, and the readout above it turns
+that into a compression ratio as you drag:
+
+```
+3,072 numbers  ->  16   (192x squeeze)
+```
+
+Drag it as wide as the image and the app tells you the exercise is void: with
+no bottleneck, copying the input becomes the cheapest solution and nothing is
+learned. That refusal is deliberate - it is the definition of the method.
+
+The diagram on the right is drawn from the **real tensor widths**, not from
+the tidy hourglass textbooks print. For a convolutional encoder those are not
+the same thing, and the app says so: the first strided stage usually holds
+*more* numbers than the image did, and the entire squeeze happens in one step,
+at the dense layer into the latent code.
+
+Two encoder styles, worth comparing at the same latent size:
+
+| Variant | What it does |
+|---|---|
+| Convolutional | keeps the picture's geometry - a pixel's neighbours stay its neighbours |
+| Dense | flattens first, so it has to relearn that pixel 1 sits beside pixel 2 |
+
+**Denoising** adds Gaussian noise to the input during training only, while the
+target stays clean. The network is asked to repair damage nobody described to
+it. Stage 4 then shows you the corrupted row it was actually fed, because the
+noise layer is inert at prediction time and you would otherwise never see it.
+
+**Hold out** removes one class from training entirely - not rarely, absent.
+That turns the autoencoder into an anomaly detector, which is the reason the
+method is used in practice for faults, fraud and defects: the anomalies you
+have no examples of yet.
+
+### 3. Training
+
+An autoencoder needs patience before it shows anything, so this workspace puts
+the number that makes the loss readable right next to it:
+
+```
+Epoch        Val MSE      vs giving up
+   12        0.03184        1.8x better
+```
+
+**"Giving up"** is the score you get by answering every image with the average
+of the training set. A bare `val MSE 0.14` tells a student nothing. Next to a
+floor of `0.056` it says something exact: this model is 2.5x *worse* than not
+trying, because a fresh decoder starts at mid-grey and these images are mostly
+dark - it has to learn the overall brightness before any shape appears.
+
+The learning-curve chart draws that floor as a dotted line, so the moment a
+run becomes a reconstruction is visible rather than inferred.
+
+**Compare latent sizes** trains the same autoencoder at latent 2, 8 and 64
+from identical initial weights and stacks the results. Measured on 900 shapes
+at 32px, 25 epochs per arm, about a minute for all three:
+
+| Latent | Squeeze | Val MSE | vs the give-up floor of 0.056 |
+|---|---|---|---|
+| 2 | 1536x | 0.0417 | 1.3x better - barely a reconstruction |
+| 8 | 384x | 0.0167 | 3.4x better - shapes are recognisable |
+| 64 | 48x | 0.0117 | 4.8x better - edges sharpen |
+
+The readout refuses to draw a conclusion the run did not earn. A three-epoch
+sweep does not report a tie, it reports that no arm has beaten the floor yet
+and that nothing can be concluded - because the alternative is congratulating
+a student for a result that is indistinguishable from noise.
+
+### 4. Reconstruct
+
+| Button | Question it answers |
+|---|---|
+| **Show reconstructions** | What does the output look like next to the input? |
+| **Show the hardest to rebuild** | Which images did this model find least familiar? |
+| **Score the held-out class** | Does the class it never saw rebuild worse - and by how much? |
+
+The rows align column by column on purpose: one picture, one waist per row,
+read top to bottom. The figure under each image is that image's own error.
+
+### The grey reconstructions
+
+The first thing everyone notices is that the shapes come back but the colour
+does not. That is not a bug, and there are two different reasons which look
+identical on screen. Measured by correlating each rebuilt shape's
+red-minus-blue balance against the original's:
+
+| Run | Colour kept | Correlation | Why |
+|---|---|---|---|
+| latent 64, 25 epochs | 6% | +0.03 | not converged yet |
+| latent 64, 90 epochs | 66% | **+0.91** | it had the room, it needed the time |
+| latent 8, 90 epochs | 14% | +0.06 | no capacity left, more time will not help |
+
+Squared error is dominated by putting a bright shape in the right place, so
+that is what gradient descent buys first. Colour is a smaller correction it
+reaches later - if the waist can still afford it. The bottleneck does not blur
+evenly; it imposes a priority order, and this is a student watching it choose.
 
 ## Troubleshooting
 
@@ -320,24 +451,33 @@ nnstudio/
     vision.py                  image datasets: synthetic shapes, CIFAR-10, folders
     resnet.py                  hand-built residual blocks + transfer learning
     vision_trainer.py          convolutional runs and the skip-connection ablation
+    autoencoder.py             encoder/decoder pair, anomaly split, error scoring
+    autoencoder_trainer.py     unsupervised runs, the latent sweep, the readouts
   ui/
-    main_window.py             thin shell: the two workspace tabs
+    main_window.py             thin shell: the three workspace tabs
     dense_workspace.py         the NN path: its 4 stages, visuals and state
     vision_workspace.py        the CNN path: its 4 stages, visuals and state
+    autoencoder_workspace.py   the AE path: its 4 stages, visuals and state
     data_panel.py              NN stage 1 - source, preview, adaptation
     architecture_panel.py      NN stage 2 - hidden stack, output head, optimiser
     training_panel.py          NN stage 3 - hyperparameters, k-fold, log
     predict_panel.py           NN stage 4 - manual inference
+    image_source.py            stage 1 for BOTH image workspaces - source + build
     vision/
-      images_panel.py          CNN stage 1 - source and dataset build
       architecture_panel.py    CNN stage 2 - scratch stack or pretrained backbone
       training_panel.py        CNN stage 3 - run, compare arms, log
       predict_panel.py         CNN stage 4 - sample and read predictions
+    autoencoder/
+      architecture_panel.py    AE stage 2 - the latent slider, denoising, hold-out
+      training_panel.py        AE stage 3 - run, sweep, the give-up comparison
+      reconstruct_panel.py     AE stage 4 - reconstruct, rank, score anomalies
     network_canvas.py          the live diagram (QPainter)
     plots.py                   learning curves, fold bars, arm overlays
     resnet_canvas.py           stage chain plus one block opened up
+    autoencoder_canvas.py      the waist, drawn from real tensor widths
     image_grid.py              image previews and prediction grids
-    workers.py                 QThread adapters for training and cross-validation
+    pair_grid.py               stacked rows: originals above reconstructions
+    workers.py                 QThread adapters for every background run
     theme.py                   palette and stylesheet
     widgets.py                 shared building blocks
 ```
@@ -353,9 +493,10 @@ plain run object in a `QThread` and turns its callbacks into signals.
 That is why training never freezes the window, and why the interesting logic can
 be checked without opening one.
 
-The two workspaces are independent on purpose. They share the theme and the
-plotting widgets and nothing else: no shared dataset, no shared model, no shared
-worker. Training in one leaves the other untouched.
+The three workspaces are independent on purpose. They share the theme, the
+plotting widgets, and - between the two image workspaces - the image-source
+panel, and nothing else: no shared dataset, no shared model, no shared worker.
+Training in one leaves the others untouched.
 
 TensorFlow is imported lazily inside the training thread, so the window opens
 immediately instead of waiting several seconds on startup.

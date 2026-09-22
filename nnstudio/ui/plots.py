@@ -111,8 +111,15 @@ class LearningCurves(FigureCanvasQTAgg):
 
         self.draw_idle()
 
-    def show_arms(self, histories: dict) -> None:
-        """Overlay several named runs, e.g. the residual and plain arms."""
+    def show_arms(self, histories: dict, metric: str = "accuracy",
+                  baseline: float | None = None) -> None:
+        """Overlay several named runs, e.g. the residual and plain arms.
+
+        `metric` is whichever second metric the runs actually carry - there is
+        no accuracy in an autoencoder's history, so the caller names it.
+        `baseline` draws a horizontal line on the loss axis: the autoencoder
+        workspace uses it for the score that means nothing was learned.
+        """
         if not histories:
             self.clear()
             return
@@ -126,7 +133,10 @@ class LearningCurves(FigureCanvasQTAgg):
         self._loss_ax.clear()
         self._style(self._loss_ax, "Validation loss")
         self._metric_ax.clear()
-        self._style(self._metric_ax, "Validation accuracy")
+        self._style(
+            self._metric_ax,
+            f"Validation {METRIC_TITLES.get(metric, metric).lower()}",
+        )
 
         for index, (label, history) in enumerate(histories.items()):
             colour = palette.get(label, spare[index % len(spare)])
@@ -136,12 +146,21 @@ class LearningCurves(FigureCanvasQTAgg):
                     range(1, len(losses) + 1), losses,
                     color=colour, linewidth=1.8, label=label,
                 )
-            accuracy = history.get("val_accuracy") or history.get("accuracy") or []
-            if accuracy:
+            values = history.get(f"val_{metric}") or history.get(metric) or []
+            if values:
                 self._metric_ax.plot(
-                    range(1, len(accuracy) + 1), accuracy,
+                    range(1, len(values) + 1), values,
                     color=colour, linewidth=1.8, label=label,
                 )
+
+        if baseline is not None and baseline == baseline:
+            self._loss_ax.axhline(
+                float(baseline),
+                color=theme.TEXT_MUTED,
+                linewidth=1.2,
+                linestyle=":",
+                label="giving up",
+            )
 
         for axes in (self._loss_ax, self._metric_ax):
             if axes.has_data():

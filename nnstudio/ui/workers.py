@@ -5,6 +5,11 @@ import traceback
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
+from ..core.autoencoder_trainer import (
+    AutoencoderRequest,
+    AutoencoderRun,
+    LatentSweepRun,
+)
 from ..core.crossval import CrossValRequest, CrossValRun
 from ..core.trainer import TrainingRequest, TrainingRun
 from ..core.vision import BuildCancelled, ImageBundle
@@ -117,6 +122,61 @@ class VisionWorker(QThread):
             request,
             on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
             on_message=self.message.emit,
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class AutoencoderWorker(QThread):
+    """Trains one autoencoder off the GUI thread, with no labels involved."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: AutoencoderRequest, parent=None):
+        super().__init__(parent)
+        self._run = AutoencoderRun(
+            request,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class LatentSweepWorker(QThread):
+    """Trains the same autoencoder at several latent sizes, back to back."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    arm_done = pyqtSignal(str, dict)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: AutoencoderRequest, latent_sizes, parent=None):
+        super().__init__(parent)
+        self._run = LatentSweepRun(
+            request,
+            latent_sizes,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+            on_arm_done=lambda label, outcome: self.arm_done.emit(label, outcome),
         )
 
     def stop(self) -> None:

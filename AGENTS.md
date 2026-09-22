@@ -65,26 +65,37 @@ The two halves meet in exactly one place: `ui/workers.py`, which wraps a plain
 | You are adding… | It belongs in |
 |---|---|
 | A dataset source, encoding or split rule | `core/dataset.py` (tabular) or `core/vision.py` (images) |
-| A layer type, activation or output head | `core/model_builder.py` (dense) or `core/resnet.py` (conv) |
-| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py` |
-| A control the user touches | the matching stage panel in `ui/` or `ui/vision/` |
-| Orchestration between stages | `ui/dense_workspace.py` or `ui/vision_workspace.py` |
+| A layer type, activation or output head | `core/model_builder.py` (dense), `core/resnet.py` (conv) or `core/autoencoder.py` (AE) |
+| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py`, `core/autoencoder_trainer.py` |
+| A control the user touches | the matching stage panel in `ui/`, `ui/vision/` or `ui/autoencoder/` |
+| An image source shared by both image workspaces | `ui/image_source.py` |
+| Orchestration between stages | `ui/dense_workspace.py`, `ui/vision_workspace.py` or `ui/autoencoder_workspace.py` |
 | A background job | a `QThread` in `ui/workers.py` — never inline |
-| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/image_grid.py`, `ui/plots.py` |
+| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/autoencoder_canvas.py`, `ui/image_grid.py`, `ui/pair_grid.py`, `ui/plots.py` |
 | A colour or a widget style | `ui/theme.py` only. No inline stylesheets in panels. |
 
-The two workspaces are deliberately independent. `DenseWorkspace` and
-`VisionWorkspace` share the theme and the plotting widgets and nothing else —
-no shared model, no shared dataset, no shared worker. A convolutional network
-is not a later stage of a dense one, and the structure says so. Keep it that
-way.
+The three workspaces are deliberately independent. `DenseWorkspace`,
+`VisionWorkspace` and `AutoencoderWorkspace` share the theme, the plotting
+widgets and — between the two image workspaces — `ui/image_source.py`, and
+nothing else. No shared model, no shared dataset, no shared worker, no
+workspace importing from another workspace's panel folder. A convolutional
+network is not a later stage of a dense one, and an autoencoder is not a later
+stage of either. Keep it that way.
+
+`ui/image_source.py` is the one piece of genuinely shared stage-1 machinery.
+It lives at the top of `ui/` rather than inside `ui/vision/` precisely so that
+the autoencoder workspace does not have to reach into the CNN's folder to use
+it. If a third image workspace appears, it uses that panel too. If you ever
+need a workspace-specific control in it, add the control to that workspace's
+own architecture panel instead — `image_source.py` must stay ignorant of what
+kind of network will consume the images.
 
 ---
 
 ## Invariants — do not break these
 
 Each of these was either a bug that shipped, or a shortcut that would have
-taught something false. There are eleven.
+taught something false. There are fourteen.
 
 ### 1. Preprocessing is fit on training rows only
 
@@ -189,6 +200,58 @@ holdout's settings instead of whatever the widgets happen to show now.
 
 ---
 
+### 12. The autoencoder's target is its own input — never a label
+
+`AutoencoderRun.run()` calls `model.fit(x_train, targets(x_train), ...)` where
+`targets()` is just `images / 255.0`. Class names reach the autoencoder
+workspace for exactly one purpose: choosing which images `split_anomaly()`
+withholds. If a label ever enters the loss, the workspace stops demonstrating
+unsupervised learning while still claiming to.
+
+Guard: the training log line "No labels are used anywhere in this run" is
+asserted by the GUI check, and `y_train` must not appear in
+`core/autoencoder_trainer.py` at all.
+
+### 13. The autoencoder maps 0..255 in to 0..1 out, and only `reconstruct()` undoes it
+
+`ImageBundle` holds pixels as float32 in 0..255, so the model rescales on the
+way in. The decoder ends on a **sigmoid**, so the output is 0..1 — which keeps
+the MSE legible (`0.0117`, not `760`). That asymmetry is deliberate, and the
+multiplication back to displayable pixels lives in exactly one place,
+`autoencoder.reconstruct()`. Do not scatter `* 255` through the UI, and do not
+"fix" the asymmetry by adding a `Rescaling(255)` output layer — that makes
+every loss on screen unreadable and breaks the give-up comparison below.
+
+For a denoising run the model is fed the corrupted image and must be scored
+against the **clean** one, which is why `reconstruction_errors()` takes an
+`against=` argument. Scoring it against its own noisy input would reward the
+network for faithfully reproducing the damage.
+
+### 14. No readout claims a lesson the run did not earn
+
+`mean_image_baseline()` computes the MSE of answering every image with the
+average of the training set. That is the score for giving up, and it is shown
+next to every autoencoder loss — on the metric row, on the learning-curve
+chart as a dotted line, and in the log.
+
+`format_sweep()` uses it as a gate. While no arm has beaten the floor it
+reports that **nothing can be concluded**, rather than reporting a tie:
+
+```
+latent  2  (1536x squeeze):  val MSE 0.14816
+latent 32  (  96x squeeze):  val MSE 0.14783
+   giving up                 val MSE 0.05440
+NO CONCLUSION IS AVAILABLE FROM THIS RUN.
+```
+
+Those two arms differ by 0.2%, which a naive formatter would print as "the
+bottleneck made no difference" — a false lesson, since neither arm had started
+learning. Arms that finish within `MEANINGFUL_GAIN` (15%) of each other are
+reported as *not separated*, never as a win. This invariant exists because the
+first version of this formatter did claim a win from a 2-epoch sweep.
+
+---
+
 ## How to verify a change
 
 There is **no committed test suite** (see Known gaps). Until there is, verify
@@ -270,12 +333,26 @@ defaults or the model code, re-measure before editing the claims.
 | Transfer learning, 240 images, 3 epochs | 100% val accuracy, 131,331 of 23,719,043 trainable (**0.55%**) |
 | Wine overfitting | `val_loss` minimum at epoch 60, rising to 0.243 by epoch 300 |
 | Wine validation split | 36 rows, so one sample is worth **2.78 accuracy points** |
+| Autoencoder sweep, 900 shapes at 32px, 25 epochs/arm | latent 2 → 0.0417, latent 8 → 0.0167, latent 64 → 0.0117 val MSE |
+| The give-up floor for that dataset | **0.0561** — so latent 2 is only 1.3x better than not trying |
+| When the sweep arms separate | still identical at epoch 2; 50% apart by epoch **7**; clearly ordered by 15 |
+| Autoencoder cost on CPU | ~0.7s per epoch at 720 images; all three sweep arms in **61s** |
+| Colour recovery, latent 64 | red-minus-blue correlation +0.03 at 25 epochs, **+0.91 at 90** |
+| Colour recovery, latent 8 | +0.06 even at 90 epochs — that waist never affords colour |
 
 The 50-layer row is the important one, and the diagnostic is **training**
 accuracy: a deep plain stack that cannot fit its own training data is failing
 to optimise, not overfitting. Below ~20 layers the shortcut mostly buys
 convergence speed — `format_comparison()` detects which of the two lessons
 applies and says so. Do not simplify that into "plain networks cannot learn".
+
+The two colour rows are the autoencoder's equivalent trap. The reconstructions
+come back grey, and there are **two different causes that look identical on
+screen**: at latent 64 colour is merely unconverged and arrives by ~90 epochs,
+while at latent 8 it never arrives at all. `COLOUR_NOTE` in
+`core/autoencoder_trainer.py` keeps them apart. Do not collapse it into "the
+bottleneck loses colour" — that would be wrong in one of the two cases, and it
+is the case a curious student is most likely to test.
 
 ---
 
@@ -285,8 +362,10 @@ Honest list, roughly by value:
 
 1. **No committed test suite.** The verification scripts used during
    development lived in a temp directory and are gone. A `tests/` folder with
-   the core, GUI-construction, end-to-end training, k-fold and two-workspace
-   checks is the single highest-value addition to this repo.
+   the core, GUI-construction, end-to-end training, k-fold and three-workspace
+   checks is the single highest-value addition to this repo. The autoencoder
+   work re-created five such scripts (core, readout guards, offscreen GUI,
+   visual rendering, cross-workspace regression) and lost them the same way.
 2. **No decision-boundary plot** for the 2D datasets (two moons, circles).
    It would make the "you need hidden layers" lesson visual instead of numeric.
 3. **No gradient-boosting baseline** next to the dense network. Measurements
@@ -295,7 +374,12 @@ Honest list, roughly by value:
 4. **No feature-map visualisation** for the CNN. Showing what the first
    convolution actually responds to is the most "see how it works" thing still
    missing.
-5. `nnstudio/ui/vision_workspace.py` and `dense_workspace.py` share a fair
+5. **`manual.html` does not cover the autoencoder.** The Spanish student
+   manual has eight chapters and stops at the convolutional workspace. The
+   bottleneck, the give-up floor and the grey-colour result are the most
+   visual lessons in the app and none of them are in the manual yet.
+6. `nnstudio/ui/vision_workspace.py`, `dense_workspace.py` and
+   `autoencoder_workspace.py` share a fair
    amount of orchestration shape. Extracting a common base is tempting —
    resist it unless the duplication actually hurts, because the independence of
-   the two paths is the point.
+   the three paths is the point.

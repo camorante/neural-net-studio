@@ -20,10 +20,10 @@ from ..core import vision as vz
 from ..core.resnet import ResNetConfig
 from ..core.vision_trainer import VisionRequest, format_comparison
 from .image_grid import ImageGrid
+from .image_source import ImageSourcePanel
 from .plots import LearningCurves
 from .resnet_canvas import ResNetCanvas
 from .vision.architecture_panel import VisionArchitecturePanel
-from .vision.images_panel import VisionImagesPanel
 from .vision.predict_panel import VisionPredictPanel
 from .vision.training_panel import VisionTrainingPanel
 from .widgets import Card
@@ -47,7 +47,7 @@ class VisionWorkspace(QWidget):
         self._total_epochs = 0
         self._rng = np.random.default_rng()
 
-        self.images_panel = VisionImagesPanel()
+        self.images_panel = ImageSourcePanel()
         self.architecture_panel = VisionArchitecturePanel()
         self.training_panel = VisionTrainingPanel()
         self.predict_panel = VisionPredictPanel()
