@@ -280,6 +280,16 @@ class AutoencoderArchitecturePanel(QWidget):
         )
         layout.addWidget(self.shape_label)
 
+        # The latent slider is right above this, so the number it has to beat
+        # belongs here too - otherwise you are choosing a waist blind.
+        self.floor_label = QLabel("-")
+        self.floor_label.setObjectName("Metric")
+        self.floor_label.setWordWrap(True)
+        self.floor_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Minimum
+        )
+        layout.addWidget(self.floor_label)
+
         self.problem_label = QLabel("")
         self.problem_label.setObjectName("Warning")
         self.problem_label.setWordWrap(True)
@@ -329,6 +339,14 @@ class AutoencoderArchitecturePanel(QWidget):
             f"{height * width * channels:,} numbers."
         )
         self.config_changed.emit()
+
+    def set_baseline(self, value: float) -> None:
+        """The error to beat, shown next to the waist that has to beat it."""
+        self.floor_label.setText(
+            "Score to beat: -"
+            if value != value
+            else f"Score to beat: {value:.5f}"
+        )
 
     def set_classes(self, names: list) -> None:
         """Populate the hold-out list once a dataset exists."""

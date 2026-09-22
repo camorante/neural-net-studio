@@ -1912,8 +1912,23 @@ pip install -r requirements.txt</pre>
       <p>
         Así que la app calcula el error que sacás <strong>si te rendís</strong>: contestar
         cada imagen con el promedio de todas. En este dataset ese número es
-        <code>0.05611</code>, y aparece siempre al lado del tuyo, en la métrica y como
-        línea punteada en el gráfico.
+        <code>0.05611</code>, y lo vas a encontrar en <strong>tres lugares</strong>:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dónde</th><th>Cómo lo ves</th></tr></thead>
+          <tbody>
+            <tr><td>Etapa 3 · Training</td><td>Como su propia columna, <span class="ui">Giving up</span>, justo al lado de <span class="ui">Val MSE</span>. Esas dos son la comparación.</td></tr>
+            <tr><td>Etapa 2 · Architecture</td><td>Como <span class="ui">Score to beat</span>, debajo del slider latente — porque es el número que esa cintura tiene que ganar.</td></tr>
+            <tr><td>El gráfico</td><td>Como línea punteada, así ves el momento exacto en que tu curva la cruza.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        <strong>Se recalcula cada vez que construís un dataset</strong>, porque es una
+        propiedad de <em>tus</em> datos y no una constante. Y si escondés una clase, se
+        recalcula otra vez sin ella: «rendirse» tiene que significar el promedio de lo
+        que el modelo realmente ve.
       </p>
 
       <figure>

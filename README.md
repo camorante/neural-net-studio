@@ -330,8 +330,8 @@ An autoencoder needs patience before it shows anything, so this workspace puts
 the number that makes the loss readable right next to it:
 
 ```
-Epoch        Val MSE      vs giving up
-   12        0.03184        1.8x better
+Epoch      Val MSE     Giving up     vs giving up
+   12      0.03184       0.05611      1.8x better
 ```
 
 **"Giving up"** is the score you get by answering every image with the average
@@ -339,6 +339,13 @@ of the training set. A bare `val MSE 0.14` tells a student nothing. Next to a
 floor of `0.056` it says something exact: this model is 2.5x *worse* than not
 trying, because a fresh decoder starts at mid-grey and these images are mostly
 dark - it has to learn the overall brightness before any shape appears.
+
+It is recomputed for every dataset you build - it is a property of your data,
+not a constant - and it appears in three places: as its own number on this
+metric row, as `Score to beat` in the Architecture summary right under the
+latent slider that has to beat it, and as a dotted line on the chart. Before
+the first epoch every other metric reads `-`, so without it there would be
+nothing on screen to judge the coming loss against.
 
 The learning-curve chart draws that floor as a dotted line, so the moment a
 run becomes a reconstruction is visible rather than inferred.

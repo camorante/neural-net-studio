@@ -193,7 +193,7 @@ class AutoencoderWorkspace(QWidget):
             "withhold. Nothing in the training loop ever sees a label."
         )
         self.training_panel.reset_metrics()
-        self.training_panel.set_baseline(
+        self._publish_baseline(
             ae.mean_image_baseline(bundle.x_train, bundle.x_val)
         )
         self.curves.clear()
@@ -301,8 +301,7 @@ class AutoencoderWorkspace(QWidget):
         self._split = split
         self._x_val_used = x_val
         self._config = request.config
-        self._baseline = ae.mean_image_baseline(x_train, x_val)
-        self.training_panel.set_baseline(self._baseline)
+        self._publish_baseline(ae.mean_image_baseline(x_train, x_val))
         return True
 
     def _train(self) -> None:
@@ -399,8 +398,7 @@ class AutoencoderWorkspace(QWidget):
         self._model = result["model"]
         self._encoder = result["encoder"]
         self._histories = {result["label"]: result["history"]}
-        self._baseline = result.get("baseline", self._baseline)
-        self.training_panel.set_baseline(self._baseline)
+        self._publish_baseline(result.get("baseline", self._baseline))
         self.curves.show_arms(self._histories, metric="mae", baseline=self._baseline)
         self.training_panel.append_log("\n" + format_run(result))
 
@@ -416,8 +414,7 @@ class AutoencoderWorkspace(QWidget):
         self._sweep_arms = arms
         self._histories = {arm["label"]: arm["history"] for arm in arms}
         if arms:
-            self._baseline = arms[0].get("baseline", self._baseline)
-        self.training_panel.set_baseline(self._baseline)
+            self._publish_baseline(arms[0].get("baseline", self._baseline))
         self.curves.show_arms(self._histories, metric="mae", baseline=self._baseline)
         self.training_panel.append_log("\n" + format_sweep(result))
 
@@ -445,6 +442,18 @@ class AutoencoderWorkspace(QWidget):
         self.architecture_panel.set_running(False)
 
     # --------------------------------------------------------------- inference
+
+    def _publish_baseline(self, value: float) -> None:
+        """Put the give-up floor everywhere it is needed, from one place.
+
+        It appears on the Training metric row, in the Architecture summary
+        beside the latent slider that has to beat it, and as a dotted line on
+        the chart. Four code paths compute it; routing them all through here is
+        what stops one of those panels from quietly showing a stale number.
+        """
+        self._baseline = float(value)
+        self.training_panel.set_baseline(self._baseline)
+        self.architecture_panel.set_baseline(self._baseline)
 
     def _forget_model(self) -> None:
         """A new dataset invalidates everything trained on the old one."""

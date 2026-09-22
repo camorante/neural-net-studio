@@ -119,10 +119,13 @@ class AutoencoderTrainingPanel(QWidget):
         metrics = QGridLayout()
         self.epoch_label = QLabel("-")
         self.loss_label = QLabel("-")
+        self.floor_label = QLabel("-")
         self.versus_label = QLabel("-")
+        # The floor sits beside Val MSE on purpose: those two numbers are the
+        # comparison, and a loss with nothing next to it teaches nothing.
         for column, (caption, widget) in enumerate(
             (("Epoch", self.epoch_label), ("Val MSE", self.loss_label),
-             ("vs giving up", self.versus_label))
+             ("Giving up", self.floor_label), ("vs giving up", self.versus_label))
         ):
             small = QLabel(caption)
             small.setObjectName("Hint")
@@ -165,15 +168,22 @@ class AutoencoderTrainingPanel(QWidget):
             self.progress.setValue(0)
 
     def set_baseline(self, value: float) -> None:
-        """The MSE of answering every image with the average of the training set."""
+        """The MSE of answering every image with the average of the training set.
+
+        Shown as a number of its own, not only inside a sentence: before the
+        first epoch every other metric reads "-", and a student looking at the
+        panel then has nothing to judge the coming loss against.
+        """
         self._baseline = float(value)
         if value != value:  # NaN
+            self.floor_label.setText("-")
             self.baseline_label.setText("")
             return
+        self.floor_label.setText(f"{value:.5f}")
         self.baseline_label.setText(
-            f"Answering every image with the average of the training set scores "
-            f"{value:.5f}. Until the validation MSE is below that, nothing has "
-            f"been learned."
+            "That is the score for answering every image with the average of "
+            "the training set. Until the validation MSE drops below it, nothing "
+            "has been learned. It is recomputed for every dataset you build."
         )
 
     def apply_preset(self, epochs: int, batch: int) -> None:
@@ -181,6 +191,8 @@ class AutoencoderTrainingPanel(QWidget):
         self.batch_spin.setValue(int(batch))
 
     def reset_metrics(self) -> None:
+        # floor_label is deliberately left alone: it describes the dataset, not
+        # the run, and _start() calls this right after _prepare() computed it.
         for label in (self.epoch_label, self.loss_label, self.versus_label):
             label.setText("-")
         self.progress.setValue(0)
