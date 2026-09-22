@@ -1,0 +1,1836 @@
+<meta charset="utf-8">
+<title>Manual de Neural Net Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+
+<style>
+  :root {
+    --paper:      #F2F5FA;
+    --surface:    #FFFFFF;
+    --surface-2:  #E8EDF6;
+    --ink:        #18203A;
+    --ink-soft:   #46527A;
+    --muted:      #6B779E;
+    --rule:       #D2DAE8;
+    --rule-soft:  #E3E9F3;
+    --accent:     #3049C4;
+    --accent-bg:  #E6EAFB;
+    --data:       #0B7C95;
+    --data-bg:    #DFF1F5;
+    --out:        #A2650C;
+    --out-bg:     #FAEFDA;
+    --good:       #196B49;
+    --good-bg:    #DDF0E7;
+    --bad:        #A93232;
+    --bad-bg:     #FBE5E5;
+    --shadow:     0 1px 2px rgba(24,32,58,.06), 0 8px 24px rgba(24,32,58,.05);
+
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --sans:  "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:  "IBM Plex Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:      #0E1320;
+      --surface:    #151C2C;
+      --surface-2:  #1B2438;
+      --ink:        #E8EEFF;
+      --ink-soft:   #B7C3E0;
+      --muted:      #8D9CBF;
+      --rule:       #2C3852;
+      --rule-soft:  #222C44;
+      --accent:     #7FA0FF;
+      --accent-bg:  #1C2542;
+      --data:       #49C6E4;
+      --data-bg:    #10303A;
+      --out:        #F0B457;
+      --out-bg:     #3A2C12;
+      --good:       #5BD79B;
+      --good-bg:    #12301F;
+      --bad:        #FF8080;
+      --bad-bg:     #351A1A;
+      --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper:      #0E1320;
+    --surface:    #151C2C;
+    --surface-2:  #1B2438;
+    --ink:        #E8EEFF;
+    --ink-soft:   #B7C3E0;
+    --muted:      #8D9CBF;
+    --rule:       #2C3852;
+    --rule-soft:  #222C44;
+    --accent:     #7FA0FF;
+    --accent-bg:  #1C2542;
+    --data:       #49C6E4;
+    --data-bg:    #10303A;
+    --out:        #F0B457;
+    --out-bg:     #3A2C12;
+    --good:       #5BD79B;
+    --good-bg:    #12301F;
+    --bad:        #FF8080;
+    --bad-bg:     #351A1A;
+    --shadow:     0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 0 96px;
+  }
+
+  /* ---------------------------------------------------------------- nav */
+  .toc {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+    padding-block: 40px 24px;
+    font-size: 14px;
+  }
+  .toc-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc li ol { margin-top: 2px; padding-left: 14px; border-left: 1px solid var(--rule-soft); }
+  .toc a {
+    display: block;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    line-height: 1.35;
+  }
+  .toc a:hover { background: var(--surface-2); color: var(--ink); }
+  .toc a .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    margin-right: 7px;
+  }
+  .toc .sub a { font-size: 13px; padding-block: 3px; }
+
+  /* ------------------------------------------------------------- header */
+  header.hero {
+    padding-block: 56px 8px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(38px, 6.5vw, 60px);
+    line-height: 1.02;
+    letter-spacing: -.02em;
+    margin: 0 0 20px;
+    text-wrap: balance;
+  }
+  .lede {
+    font-size: clamp(17px, 2.2vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 58ch;
+    margin: 0 0 28px;
+  }
+
+  main { padding-block: 0 0; min-width: 0; }
+
+  section { scroll-margin-top: 24px; padding-block: 44px 0; }
+  section + section { border-top: 1px solid var(--rule-soft); }
+
+  h2 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(27px, 3.6vw, 35px);
+    line-height: 1.15;
+    letter-spacing: -.015em;
+    margin: 0 0 10px;
+    text-wrap: balance;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  h2 .chapter {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0;
+    flex: none;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.3;
+    margin: 36px 0 8px;
+    letter-spacing: -.008em;
+    scroll-margin-top: 24px;
+  }
+  h4 {
+    font-family: var(--mono);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 26px 0 8px;
+  }
+  p { margin: 0 0 16px; max-width: 68ch; }
+  .section-lede { color: var(--ink-soft); font-size: 17px; max-width: 64ch; margin-bottom: 22px; }
+  ul, ol.body-list { max-width: 68ch; padding-left: 22px; margin: 0 0 16px; }
+  li { margin-bottom: 7px; }
+  strong { font-weight: 600; }
+  a { color: var(--accent); }
+
+  code, .ui {
+    font-family: var(--mono);
+    font-size: .875em;
+  }
+  code {
+    background: var(--surface-2);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  /* A control you click in the app, not a code token. */
+  .ui {
+    background: var(--accent-bg);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  pre {
+    background: var(--ink);
+    color: #E8EEFF;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 16px 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 0 0 18px;
+  }
+  :root[data-theme="dark"] pre,
+  :root:not([data-theme="light"]) pre { background: #060A14; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) pre { background: var(--ink); } }
+
+  /* -------------------------------------------------------------- figures */
+  figure {
+    margin: 26px 0;
+    padding: 20px 20px 14px;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  figure svg { display: block; width: 100%; max-width: 100%; height: auto; color: var(--ink); }
+  figcaption {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--rule-soft);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  figcaption b { color: var(--ink-soft); font-weight: 600; }
+
+  /* --------------------------------------------------------------- tables */
+  .table-wrap { overflow-x: auto; margin: 0 0 20px; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 460px;
+    font-size: 15px;
+  }
+  th, td {
+    text-align: left;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--rule-soft);
+    vertical-align: top;
+  }
+  thead th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td:first-child { white-space: nowrap; }
+  td .ui { font-size: 13px; }
+  .num-cell { font-variant-numeric: tabular-nums; font-family: var(--mono); font-size: 13px; }
+
+  /* ---------------------------------------------------------------- notes */
+  .note {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-bg);
+    padding: 14px 18px;
+    border-radius: 0 10px 10px 0;
+    margin: 22px 0;
+    max-width: 68ch;
+  }
+  .note p:last-child { margin-bottom: 0; }
+  .note.warn { border-left-color: var(--out); background: var(--out-bg); }
+  .note.trap { border-left-color: var(--bad); background: var(--bad-bg); }
+  .note-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--accent);
+  }
+  .note.warn .note-label { color: var(--out); }
+  .note.trap .note-label { color: var(--bad); }
+
+  /* ----------------------------------------------------------- experiment */
+  .lab {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 22px 22px 8px;
+    margin: 0 0 20px;
+    box-shadow: var(--shadow);
+  }
+  .lab-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+  .lab-n {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--surface);
+    background: var(--accent);
+    border-radius: 5px;
+    padding: 2px 7px;
+    flex: none;
+  }
+  .lab h3 { margin: 0; font-size: 18px; }
+  .lab dl { margin: 12px 0 0; display: grid; grid-template-columns: max-content minmax(0,1fr); gap: 6px 16px; }
+  .lab dt {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-top: 3px;
+  }
+  .lab dd { margin: 0; }
+  .lab dd:last-child { margin-bottom: 14px; }
+  .lab .lesson { color: var(--good); font-weight: 500; }
+
+  /* ------------------------------------------------------------- glossary */
+  .glossary { display: grid; gap: 0; margin-top: 8px; }
+  .glossary div {
+    display: grid;
+    grid-template-columns: minmax(120px, 190px) minmax(0, 1fr);
+    gap: 4px 20px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .glossary dt { font-weight: 600; }
+  .glossary dd { margin: 0; color: var(--ink-soft); }
+
+  /* ------------------------------------------------------------ utilities */
+  .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+  .pill {
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    color: var(--ink-soft);
+  }
+  .pill.on { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+  .two-col { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 18px; margin: 0 0 20px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .card h4 { margin-top: 0; }
+  .card p:last-child { margin-bottom: 0; }
+
+  @media (max-width: 860px) {
+    .shell { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .toc {
+      position: static;
+      max-height: none;
+      padding-block: 24px 8px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 8px;
+    }
+    .toc ol { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .toc li ol { display: none; }
+    .toc a { border: 1px solid var(--rule); border-radius: 999px; padding: 4px 11px; font-size: 13px; }
+    header.hero { padding-block: 24px 8px; }
+    .lab dl { grid-template-columns: minmax(0,1fr); gap: 2px; }
+    .lab dt { margin-top: 8px; }
+    .glossary div { grid-template-columns: minmax(0,1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="shell">
+
+  <nav class="toc" aria-label="Contenido">
+    <p class="toc-title">Contenido</p>
+    <ol>
+      <li><a href="#empezar"><span class="num">1</span>Antes de empezar</a></li>
+      <li><a href="#dos-mundos"><span class="num">2</span>Los dos mundos</a></li>
+      <li>
+        <a href="#conceptos"><span class="num">3</span>Conceptos básicos</a>
+        <ol class="sub">
+          <li><a href="#neurona">La neurona</a></li>
+          <li><a href="#capas">Capas y red</a></li>
+          <li><a href="#entrenar">Qué es entrenar</a></li>
+          <li><a href="#loss">Loss y accuracy</a></li>
+          <li><a href="#validacion">Datos de validación</a></li>
+          <li><a href="#overfitting">Overfitting</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#dense"><span class="num">4</span>Workspace Dense</a>
+        <ol class="sub">
+          <li><a href="#dense-data">1. Data</a></li>
+          <li><a href="#dense-arch">2. Architecture</a></li>
+          <li><a href="#dense-train">3. Training</a></li>
+          <li><a href="#dense-predict">4. Predict</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#cnn-conceptos"><span class="num">5</span>Conceptos de CNN</a>
+        <ol class="sub">
+          <li><a href="#convolucion">La convolución</a></li>
+          <li><a href="#skip">Conexión de salto</a></li>
+          <li><a href="#transfer">Transfer learning</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#cnn"><span class="num">6</span>Workspace CNN</a>
+        <ol class="sub">
+          <li><a href="#cnn-images">1. Images</a></li>
+          <li><a href="#cnn-arch">2. Architecture</a></li>
+          <li><a href="#cnn-train">3. Training</a></li>
+          <li><a href="#cnn-predict">4. Predict</a></li>
+        </ol>
+      </li>
+      <li><a href="#experimentos"><span class="num">7</span>Experimentos</a></li>
+      <li><a href="#glosario"><span class="num">8</span>Glosario</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <header class="hero">
+      <p class="eyebrow">Manual de uso y de conceptos</p>
+      <h1>Neural Net Studio</h1>
+      <p class="lede">
+        Una aplicación para <strong>armar redes neuronales con el mouse</strong>, entrenarlas
+        y mirar qué pasa adentro. No vas a escribir código: vas a mover números y ver
+        cómo cambia el resultado. Que es, en el fondo, lo que hace todo el mundo que
+        trabaja con esto.
+      </p>
+      <p class="lede" style="font-size:16px">
+        Este manual explica primero <em>los conceptos</em> y después <em>los botones</em>.
+        En ese orden a propósito. Si entendés qué es una neurona, los botones se
+        explican solos; al revés no funciona.
+      </p>
+    </header>
+
+    <!-- ============================================================ 1 -->
+    <section id="empezar">
+      <h2><span class="chapter">01</span>Antes de empezar</h2>
+      <p class="section-lede">
+        Necesitás Python 3.10 a 3.12 y unos diez minutos de paciencia la primera vez.
+      </p>
+
+      <h4>Instalar</h4>
+      <p>
+        Siempre dentro de un <strong>entorno virtual</strong>. No es burocracia:
+        TensorFlow exige versiones exactas de otras librerías, y si lo instalás global
+        va a romper otro proyecto tuyo tarde o temprano.
+      </p>
+<pre>python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt</pre>
+
+      <h4>Arrancar</h4>
+<pre>python main.py</pre>
+
+      <div class="note">
+        <span class="note-label">Ojo con esto</span>
+        <p>
+          La ventana abre al instante, pero la <strong>primera vez</strong> que apretás
+          <span class="ui">Train</span> vas a esperar unos segundos antes de que empiece
+          la época 1. Es TensorFlow cargándose. En el log vas a leer
+          <code>Loading TensorFlow...</code>. Es normal, no se colgó.
+        </p>
+      </div>
+
+      <h4>Cómo leer este manual</h4>
+      <p>
+        Los capítulos 3 y 5 son <strong>conceptos</strong>: lo que tenés que entender.
+        Los capítulos 4 y 6 son <strong>referencia</strong>: qué hace cada control.
+        El capítulo 7 son <strong>experimentos</strong> para hacer con la app abierta,
+        y es la parte que más te va a enseñar.
+      </p>
+      <p>
+        Cuando veas algo así <span class="ui">Build dataset</span>, es un botón o un
+        control que existe literalmente en la pantalla, con ese nombre exacto.
+      </p>
+    </section>
+
+    <!-- ============================================================ 2 -->
+    <section id="dos-mundos">
+      <h2><span class="chapter">02</span>Los dos mundos: NN y CNN</h2>
+      <p class="section-lede">
+        Al abrir la app ves dos pestañas grandes arriba. No son dos pasos.
+        Son dos caminos distintos, y elegís uno.
+      </p>
+
+      <div class="pill-row">
+        <span class="pill on">Dense network (NN)</span>
+        <span class="pill on">Convolutional (CNN)</span>
+      </div>
+
+      <p>
+        Cada uno tiene sus propias cuatro etapas abajo, sus propios datos y su propio
+        modelo. Entrenar en uno no toca el otro para nada.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 300" role="img" aria-label="Una tabla se aplana en una lista de números que entra a una red densa; una imagen conserva su forma y un filtro la recorre en una red convolucional">
+          <defs>
+            <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <!-- TOP: dense -->
+          <text x="0" y="16" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">DENSE (NN) — datos en tabla</text>
+
+          <!-- table -->
+          <g stroke="currentColor" stroke-width="1" fill="none" opacity="0.85">
+            <rect x="4" y="30" width="118" height="72" rx="4"></rect>
+            <line x1="4" y1="48" x2="122" y2="48"></line>
+            <line x1="4" y1="66" x2="122" y2="66"></line>
+            <line x1="4" y1="84" x2="122" y2="84"></line>
+            <line x1="43" y1="30" x2="43" y2="102"></line>
+            <line x1="82" y1="30" x2="82" y2="102"></line>
+          </g>
+          <text x="63" y="118" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">filas y columnas</text>
+
+          <line x1="130" y1="66" x2="176" y2="66" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar1)"></line>
+          <text x="153" y="58" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.75">se aplana</text>
+
+          <!-- flat vector -->
+          <g>
+            <rect x="184" y="52" width="26" height="28" rx="3" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <rect x="212" y="52" width="26" height="28" rx="3" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <rect x="240" y="52" width="26" height="28" rx="3" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <rect x="268" y="52" width="26" height="28" rx="3" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+          </g>
+          <text x="239" y="96" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">una lista de números</text>
+
+          <line x1="302" y1="66" x2="344" y2="66" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar1)"></line>
+
+          <!-- dense net: every node to every node -->
+          <g stroke="currentColor" stroke-width="0.7" opacity="0.4">
+            <line x1="360" y1="40" x2="430" y2="40"></line><line x1="360" y1="40" x2="430" y2="66"></line><line x1="360" y1="40" x2="430" y2="92"></line>
+            <line x1="360" y1="66" x2="430" y2="40"></line><line x1="360" y1="66" x2="430" y2="66"></line><line x1="360" y1="66" x2="430" y2="92"></line>
+            <line x1="360" y1="92" x2="430" y2="40"></line><line x1="360" y1="92" x2="430" y2="66"></line><line x1="360" y1="92" x2="430" y2="92"></line>
+          </g>
+          <g fill="var(--accent)">
+            <circle cx="360" cy="40" r="6"></circle><circle cx="360" cy="66" r="6"></circle><circle cx="360" cy="92" r="6"></circle>
+            <circle cx="430" cy="40" r="6"></circle><circle cx="430" cy="66" r="6"></circle><circle cx="430" cy="92" r="6"></circle>
+          </g>
+          <text x="395" y="118" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">todos con todos</text>
+
+          <text x="470" y="52" font-size="12" fill="currentColor">El orden de las columnas</text>
+          <text x="470" y="68" font-size="12" fill="currentColor">no importa. No hay</text>
+          <text x="470" y="84" font-size="12" fill="currentColor">«al lado de».</text>
+
+          <line x1="0" y1="140" x2="720" y2="140" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+
+          <!-- BOTTOM: conv -->
+          <text x="0" y="166" font-family="monospace" font-size="12" font-weight="600" fill="var(--data)">CONVOLUTIONAL (CNN) — datos en imagen</text>
+
+          <!-- image grid -->
+          <g>
+            <rect x="4" y="180" width="96" height="96" rx="4" fill="var(--surface-2)" stroke="currentColor" stroke-width="1" opacity="0.9"></rect>
+            <g stroke="currentColor" stroke-width="0.6" opacity="0.45">
+              <line x1="28" y1="180" x2="28" y2="276"></line><line x1="52" y1="180" x2="52" y2="276"></line><line x1="76" y1="180" x2="76" y2="276"></line>
+              <line x1="4" y1="204" x2="100" y2="204"></line><line x1="4" y1="228" x2="100" y2="228"></line><line x1="4" y1="252" x2="100" y2="252"></line>
+            </g>
+            <rect x="28" y="204" width="48" height="48" fill="none" stroke="var(--out)" stroke-width="2.5"></rect>
+          </g>
+          <text x="52" y="292" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">píxeles vecinos</text>
+
+          <line x1="110" y1="228" x2="156" y2="228" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar1)"></line>
+          <text x="133" y="220" font-size="10" text-anchor="middle" fill="var(--out)">filtro</text>
+
+          <!-- feature map -->
+          <g>
+            <rect x="164" y="192" width="72" height="72" rx="4" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <g stroke="var(--data)" stroke-width="0.6" opacity="0.6">
+              <line x1="188" y1="192" x2="188" y2="264"></line><line x1="212" y1="192" x2="212" y2="264"></line>
+              <line x1="164" y1="216" x2="236" y2="216"></line><line x1="164" y1="240" x2="236" y2="240"></line>
+            </g>
+          </g>
+          <text x="200" y="280" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">mapa de rasgos</text>
+
+          <line x1="246" y1="228" x2="288" y2="228" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar1)"></line>
+          <text x="267" y="220" font-size="10" text-anchor="middle" fill="currentColor" opacity="0.75">se repite</text>
+
+          <g>
+            <rect x="296" y="204" width="44" height="44" rx="4" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <rect x="350" y="214" width="24" height="24" rx="3" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+          </g>
+          <line x1="384" y1="228" x2="424" y2="228" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar1)"></line>
+          <circle cx="436" cy="214" r="6" fill="var(--out)"></circle>
+          <circle cx="436" cy="228" r="6" fill="var(--out)"></circle>
+          <circle cx="436" cy="242" r="6" fill="var(--out)"></circle>
+
+          <text x="470" y="208" font-size="12" fill="currentColor">El filtro es el MISMO en</text>
+          <text x="470" y="224" font-size="12" fill="currentColor">toda la imagen. Por eso un</text>
+          <text x="470" y="240" font-size="12" fill="currentColor">gato sigue siendo un gato</text>
+          <text x="470" y="256" font-size="12" fill="currentColor">si se mueve tres píxeles.</text>
+        </svg>
+        <figcaption>
+          <b>La diferencia no es el tamaño de los datos, es su forma.</b> En una tabla las
+          columnas no tienen vecinos: da igual el orden. En una imagen sí: un píxel
+          significa algo junto a los que tiene al lado. La convolución existe para
+          aprovechar eso, y por eso gana en imágenes y pierde en planillas.
+        </figcaption>
+      </figure>
+
+      <div class="two-col">
+        <div class="card">
+          <h4>Usá Dense (NN) si…</h4>
+          <p>
+            tus datos son una <strong>planilla</strong>: filas y columnas. Precios,
+            mediciones, edades, categorías. Iris, Wine, un CSV tuyo.
+          </p>
+        </div>
+        <div class="card">
+          <h4>Usá Convolutional (CNN) si…</h4>
+          <p>
+            tus datos son <strong>imágenes</strong>. Fotos, dibujos, cualquier cosa
+            donde «estar al lado» signifique algo.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 3 -->
+    <section id="conceptos">
+      <h2><span class="chapter">03</span>Conceptos básicos</h2>
+      <p class="section-lede">
+        Seis ideas. Con estas seis entendés todo lo que hace la app.
+      </p>
+
+      <h3 id="neurona">3.1 · La neurona: una suma con opinión</h3>
+      <p>
+        Una neurona artificial no tiene nada de misterioso. Recibe varios números,
+        <strong>multiplica cada uno por un peso</strong>, los suma todos, le agrega un
+        número extra llamado <em>sesgo</em>, y pasa el resultado por una función.
+        Eso es todo.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 250" role="img" aria-label="Tres entradas multiplicadas por pesos entran a una suma, se agrega un sesgo, el resultado pasa por una activación y sale un número">
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <!-- inputs -->
+          <circle cx="40" cy="60" r="18" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"></circle>
+          <circle cx="40" cy="120" r="18" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"></circle>
+          <circle cx="40" cy="180" r="18" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"></circle>
+          <text x="40" y="65" font-size="13" text-anchor="middle" fill="var(--data)" font-family="monospace">x₁</text>
+          <text x="40" y="125" font-size="13" text-anchor="middle" fill="var(--data)" font-family="monospace">x₂</text>
+          <text x="40" y="185" font-size="13" text-anchor="middle" fill="var(--data)" font-family="monospace">x₃</text>
+          <text x="40" y="218" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">entradas</text>
+
+          <!-- weighted edges -->
+          <line x1="60" y1="60" x2="228" y2="112" stroke="currentColor" stroke-width="2.2" marker-end="url(#ar2)"></line>
+          <line x1="60" y1="120" x2="228" y2="120" stroke="currentColor" stroke-width="1" marker-end="url(#ar2)"></line>
+          <line x1="60" y1="180" x2="228" y2="130" stroke="currentColor" stroke-width="3.2" marker-end="url(#ar2)"></line>
+          <text x="128" y="76" font-size="12" fill="var(--accent)" font-family="monospace">w₁ = 0.8</text>
+          <text x="128" y="112" font-size="12" fill="var(--accent)" font-family="monospace">w₂ = 0.1</text>
+          <text x="128" y="172" font-size="12" fill="var(--accent)" font-family="monospace">w₃ = 1.9</text>
+
+          <!-- sum -->
+          <circle cx="258" cy="120" r="28" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.5"></circle>
+          <text x="258" y="128" font-size="22" text-anchor="middle" fill="currentColor">Σ</text>
+          <text x="258" y="170" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">suma todo</text>
+
+          <!-- bias -->
+          <rect x="228" y="42" width="60" height="26" rx="5" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.2"></rect>
+          <text x="258" y="60" font-size="12" text-anchor="middle" fill="var(--out)" font-family="monospace">sesgo b</text>
+          <line x1="258" y1="70" x2="258" y2="90" stroke="currentColor" stroke-width="1.2" marker-end="url(#ar2)"></line>
+
+          <line x1="288" y1="120" x2="336" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"></line>
+
+          <!-- activation -->
+          <rect x="344" y="88" width="104" height="64" rx="8" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <polyline points="360,142 388,142 396,104 432,100" fill="none" stroke="var(--accent)" stroke-width="2.2"></polyline>
+          <text x="396" y="172" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">activación</text>
+
+          <line x1="456" y1="120" x2="502" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar2)"></line>
+
+          <!-- output -->
+          <circle cx="528" cy="120" r="20" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.8"></circle>
+          <text x="528" y="126" font-size="13" text-anchor="middle" fill="var(--out)" font-family="monospace">y</text>
+          <text x="528" y="164" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">salida</text>
+
+          <!-- formula -->
+          <text x="564" y="106" font-size="12" fill="currentColor" opacity="0.85" font-family="monospace">y = f(</text>
+          <text x="564" y="124" font-size="12" fill="currentColor" opacity="0.85" font-family="monospace">  w₁x₁+w₂x₂</text>
+          <text x="564" y="142" font-size="12" fill="currentColor" opacity="0.85" font-family="monospace">  +w₃x₃ + b )</text>
+        </svg>
+        <figcaption>
+          <b>Los pesos son lo único que la red aprende.</b> Fijate en el grosor de las
+          flechas: <code>w₃</code> es grueso porque esa entrada le importa mucho;
+          <code>w₂</code> es finito porque casi la ignora. Entrenar es ajustar esos
+          números miles de veces.
+        </figcaption>
+      </figure>
+
+      <h4>¿Y para qué sirve la activación?</h4>
+      <p>
+        Sin ella, una neurona solo puede hacer <strong>líneas rectas</strong>. Podés
+        apilar mil capas y seguís teniendo una línea recta, porque sumar rectas da
+        rectas. La activación dobla el resultado, y es lo único que le permite a una
+        red aprender fronteras curvas.
+      </p>
+      <div class="note">
+        <span class="note-label">Probalo</span>
+        <p>
+          En el capítulo 7 hay un experimento donde sacás todas las capas ocultas y
+          entrenás con el dataset <span class="ui">Two moons</span>. Vas a ver a la red
+          fracasar en vivo. Eso es una línea recta intentando separar dos lunas.
+        </p>
+      </div>
+
+      <h3 id="capas">3.2 · Capas: de una neurona a una red</h3>
+      <p>
+        Una neurona sola no alcanza. Las ponés en <strong>capas</strong>, y cada capa le
+        pasa su resultado a la siguiente. En la app configurás exactamente esto.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 280" role="img" aria-label="Capa de entrada con cuatro neuronas, dos capas ocultas y una capa de salida con tres neuronas, cada una con su control en la aplicación">
+          <!-- connections -->
+          <g stroke="currentColor" stroke-width="0.6" opacity="0.28">
+            <line x1="100" y1="70" x2="250" y2="50"></line><line x1="100" y1="70" x2="250" y2="90"></line><line x1="100" y1="70" x2="250" y2="130"></line><line x1="100" y1="70" x2="250" y2="170"></line><line x1="100" y1="70" x2="250" y2="210"></line>
+            <line x1="100" y1="110" x2="250" y2="50"></line><line x1="100" y1="110" x2="250" y2="90"></line><line x1="100" y1="110" x2="250" y2="130"></line><line x1="100" y1="110" x2="250" y2="170"></line><line x1="100" y1="110" x2="250" y2="210"></line>
+            <line x1="100" y1="150" x2="250" y2="50"></line><line x1="100" y1="150" x2="250" y2="90"></line><line x1="100" y1="150" x2="250" y2="130"></line><line x1="100" y1="150" x2="250" y2="170"></line><line x1="100" y1="150" x2="250" y2="210"></line>
+            <line x1="100" y1="190" x2="250" y2="50"></line><line x1="100" y1="190" x2="250" y2="90"></line><line x1="100" y1="190" x2="250" y2="130"></line><line x1="100" y1="190" x2="250" y2="170"></line><line x1="100" y1="190" x2="250" y2="210"></line>
+
+            <line x1="250" y1="50" x2="400" y2="90"></line><line x1="250" y1="50" x2="400" y2="130"></line><line x1="250" y1="50" x2="400" y2="170"></line>
+            <line x1="250" y1="90" x2="400" y2="90"></line><line x1="250" y1="90" x2="400" y2="130"></line><line x1="250" y1="90" x2="400" y2="170"></line>
+            <line x1="250" y1="130" x2="400" y2="90"></line><line x1="250" y1="130" x2="400" y2="130"></line><line x1="250" y1="130" x2="400" y2="170"></line>
+            <line x1="250" y1="170" x2="400" y2="90"></line><line x1="250" y1="170" x2="400" y2="130"></line><line x1="250" y1="170" x2="400" y2="170"></line>
+            <line x1="250" y1="210" x2="400" y2="90"></line><line x1="250" y1="210" x2="400" y2="130"></line><line x1="250" y1="210" x2="400" y2="170"></line>
+
+            <line x1="400" y1="90" x2="540" y2="90"></line><line x1="400" y1="90" x2="540" y2="130"></line><line x1="400" y1="90" x2="540" y2="170"></line>
+            <line x1="400" y1="130" x2="540" y2="90"></line><line x1="400" y1="130" x2="540" y2="130"></line><line x1="400" y1="130" x2="540" y2="170"></line>
+            <line x1="400" y1="170" x2="540" y2="90"></line><line x1="400" y1="170" x2="540" y2="130"></line><line x1="400" y1="170" x2="540" y2="170"></line>
+          </g>
+
+          <!-- nodes -->
+          <g fill="var(--data)">
+            <circle cx="100" cy="70" r="9"></circle><circle cx="100" cy="110" r="9"></circle>
+            <circle cx="100" cy="150" r="9"></circle><circle cx="100" cy="190" r="9"></circle>
+          </g>
+          <g fill="var(--accent)">
+            <circle cx="250" cy="50" r="9"></circle><circle cx="250" cy="90" r="9"></circle><circle cx="250" cy="130" r="9"></circle><circle cx="250" cy="170" r="9"></circle><circle cx="250" cy="210" r="9"></circle>
+            <circle cx="400" cy="90" r="9"></circle><circle cx="400" cy="130" r="9"></circle><circle cx="400" cy="170" r="9"></circle>
+          </g>
+          <g fill="var(--out)">
+            <circle cx="540" cy="90" r="9"></circle><circle cx="540" cy="130" r="9"></circle><circle cx="540" cy="170" r="9"></circle>
+          </g>
+
+          <!-- labels -->
+          <text x="100" y="242" font-size="13" text-anchor="middle" fill="var(--data)" font-weight="600">Entrada · 4</text>
+          <text x="100" y="260" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">lo fija el dataset</text>
+
+          <text x="250" y="242" font-size="13" text-anchor="middle" fill="var(--accent)" font-weight="600">Oculta 1 · 5</text>
+          <text x="250" y="260" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">lo elegís vos</text>
+
+          <text x="400" y="242" font-size="13" text-anchor="middle" fill="var(--accent)" font-weight="600">Oculta 2 · 3</text>
+          <text x="400" y="260" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">lo elegís vos</text>
+
+          <text x="540" y="242" font-size="13" text-anchor="middle" fill="var(--out)" font-weight="600">Salida · 3</text>
+          <text x="540" y="260" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.65">una por clase</text>
+
+          <text x="620" y="94" font-size="11" fill="currentColor" opacity="0.8">clase A</text>
+          <text x="620" y="134" font-size="11" fill="currentColor" opacity="0.8">clase B</text>
+          <text x="620" y="174" font-size="11" fill="currentColor" opacity="0.8">clase C</text>
+
+          <text x="0" y="18" font-size="12" fill="currentColor" opacity="0.8">Cada línea es un peso. Esta red chiquita ya tiene 62 pesos que ajustar.</text>
+        </svg>
+        <figcaption>
+          <b>Vos solo controlás el medio.</b> La capa de entrada la fija tu dataset (una
+          neurona por columna) y la de salida la fija tu problema (una por clase). Las
+          del medio son tu decisión: cuántas capas y cuántas neuronas en cada una.
+        </figcaption>
+      </figure>
+
+      <h3 id="entrenar">3.3 · Entrenar es equivocarse y corregir</h3>
+      <p>
+        La red arranca con los pesos <strong>al azar</strong>. Literalmente. Entonces al
+        principio responde cualquier cosa. Entrenar es repetir un ciclo de cuatro pasos
+        hasta que deje de equivocarse tanto.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 260" role="img" aria-label="Ciclo de cuatro pasos: predecir, medir el error, calcular el gradiente y ajustar los pesos, que vuelve al principio">
+          <defs>
+            <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect x="20" y="60" width="136" height="62" rx="9" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.5"></rect>
+          <text x="88" y="85" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="600">1 · Predecir</text>
+          <text x="88" y="105" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">«creo que es un gato»</text>
+
+          <line x1="160" y1="91" x2="200" y2="91" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"></line>
+
+          <rect x="204" y="60" width="136" height="62" rx="9" fill="var(--bad-bg)" stroke="var(--bad)" stroke-width="1.5"></rect>
+          <text x="272" y="85" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="600">2 · Medir error</text>
+          <text x="272" y="105" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">era un perro → loss</text>
+
+          <line x1="344" y1="91" x2="384" y2="91" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"></line>
+
+          <rect x="388" y="60" width="136" height="62" rx="9" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.5"></rect>
+          <text x="456" y="85" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="600">3 · ¿De quién?</text>
+          <text x="456" y="105" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">culpa de cada peso</text>
+
+          <line x1="528" y1="91" x2="568" y2="91" stroke="currentColor" stroke-width="1.6" marker-end="url(#ar3)"></line>
+
+          <rect x="572" y="60" width="118" height="62" rx="9" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.5"></rect>
+          <text x="631" y="85" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="600">4 · Ajustar</text>
+          <text x="631" y="105" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">mover los pesos</text>
+
+          <!-- loop back -->
+          <path d="M631,126 L631,170 Q631,182 619,182 L100,182 Q88,182 88,170 L88,130"
+                fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 5" marker-end="url(#ar3)"></path>
+          <text x="360" y="204" font-size="12" text-anchor="middle" fill="currentColor">y otra vez, con el siguiente lote de ejemplos</text>
+
+          <text x="0" y="22" font-size="12" fill="currentColor" opacity="0.8">Una vuelta completa por TODOS tus datos se llama una</text>
+          <text x="404" y="22" font-size="12" fill="var(--accent)" font-weight="600" font-family="monospace">época (epoch)</text>
+
+          <text x="360" y="240" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.75">El paso 3 se llama «retropropagación». El tamaño del paso 4 es el «learning rate».</text>
+        </svg>
+        <figcaption>
+          <b>Nadie le dice a la red cuáles son los pesos correctos.</b> Solo se le dice
+          cuánto se equivocó, y ella deduce en qué dirección mover cada peso para
+          equivocarse un poquito menos la próxima vez.
+        </figcaption>
+      </figure>
+
+      <h3 id="loss">3.4 · Loss y accuracy: dos preguntas distintas</h3>
+      <p>
+        La app te muestra los dos números y es fácil confundirlos.
+      </p>
+      <div class="two-col">
+        <div class="card">
+          <h4>Loss (pérdida)</h4>
+          <p>
+            Mide <strong>cuán equivocada</strong> está, incluyendo la confianza.
+            Decir «95% gato» cuando era perro es mucho peor que decir «51% gato».
+            <strong>Más bajo es mejor.</strong> Es lo que la red intenta minimizar.
+          </p>
+        </div>
+        <div class="card">
+          <h4>Accuracy (exactitud)</h4>
+          <p>
+            Mide <strong>cuántas acertó</strong>, nada más. No le importa si acertó por
+            poco o por mucho. <strong>Más alto es mejor.</strong> Es lo que un humano
+            entiende sin explicación.
+          </p>
+        </div>
+      </div>
+      <p>
+        Pueden moverse en direcciones distintas, y cuando eso pasa, te están contando
+        algo: si el loss empeora pero el accuracy no cambia, la red se está volviendo
+        <em>más engreída</em> sin volverse más correcta.
+      </p>
+
+      <h3 id="validacion">3.5 · Por qué la red no ve todos tus datos</h3>
+      <p>
+        Si le enseñás a alguien con un cuestionario y después le tomás examen
+        <strong>con ese mismo cuestionario</strong>, no sabés si aprendió o si memorizó.
+        Por eso la app aparta una parte de tus datos y no se la muestra nunca durante el
+        entrenamiento.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 170" role="img" aria-label="Una barra de datos partida en ochenta por ciento de entrenamiento y veinte por ciento de validación que el modelo nunca ve">
+          <text x="0" y="18" font-size="12" fill="currentColor" opacity="0.8">Tus 150 filas, mezcladas al azar</text>
+
+          <rect x="0" y="34" width="560" height="46" rx="7" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <rect x="560" y="34" width="140" height="46" rx="7" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.5"></rect>
+
+          <text x="280" y="55" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="600">Entrenamiento · 80%</text>
+          <text x="280" y="72" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">120 filas · con estas ajusta los pesos</text>
+
+          <text x="630" y="55" font-size="13" text-anchor="middle" fill="var(--ink)" font-weight="600">Validación</text>
+          <text x="630" y="72" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">30 filas</text>
+
+          <line x1="630" y1="88" x2="630" y2="112" stroke="var(--out)" stroke-width="1.5"></line>
+          <text x="630" y="128" font-size="12" text-anchor="middle" fill="var(--out)" font-weight="600">nunca las ve</text>
+          <text x="630" y="145" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">al entrenar</text>
+
+          <text x="0" y="128" font-size="12" fill="currentColor">El <tspan font-family="monospace" fill="var(--accent)">val_loss</tspan> y el <tspan font-family="monospace" fill="var(--accent)">val_accuracy</tspan> se calculan solo con la parte naranja.</text>
+          <text x="0" y="147" font-size="12" fill="currentColor">Son los únicos números que dicen algo sobre datos nuevos.</text>
+        </svg>
+        <figcaption>
+          <b>Controlás esto con <span class="ui">Validation split</span> en la etapa Data.</b>
+          0.20 significa que el 20% se aparta. Si tu dataset es chico, ese 20% puede ser
+          tan poco que el resultado sea pura suerte — ahí entra la validación cruzada.
+        </figcaption>
+      </figure>
+
+      <h3 id="overfitting">3.6 · Overfitting: cuando memoriza en vez de aprender</h3>
+      <p>
+        Este es <em>el</em> problema de las redes neuronales, y lo vas a ver con tus
+        propios ojos en la app. Una red con muchos parámetros y pocos datos termina
+        aprendiéndose los ejemplos de memoria, incluido el ruido.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 360" role="img" aria-label="Gráfico del loss por época: el de entrenamiento baja siempre hasta casi cero, el de validación baja hasta la época 60 y después vuelve a subir">
+          <!-- grid -->
+          <g stroke="currentColor" stroke-width="0.6" opacity="0.15">
+            <line x1="70" y1="290" x2="650" y2="290"></line>
+            <line x1="70" y1="235.8" x2="650" y2="235.8"></line>
+            <line x1="70" y1="181.7" x2="650" y2="181.7"></line>
+            <line x1="70" y1="127.5" x2="650" y2="127.5"></line>
+            <line x1="70" y1="73.3" x2="650" y2="73.3"></line>
+          </g>
+          <!-- axes -->
+          <line x1="70" y1="30" x2="70" y2="290" stroke="currentColor" stroke-width="1.2" opacity="0.6"></line>
+          <line x1="70" y1="290" x2="650" y2="290" stroke="currentColor" stroke-width="1.2" opacity="0.6"></line>
+
+          <!-- y labels -->
+          <g font-size="11" fill="currentColor" opacity="0.75" text-anchor="end" font-family="monospace">
+            <text x="62" y="294">0.00</text>
+            <text x="62" y="240">0.25</text>
+            <text x="62" y="186">0.50</text>
+            <text x="62" y="131">0.75</text>
+            <text x="62" y="77">1.00</text>
+          </g>
+          <text x="22" y="160" font-size="12" fill="currentColor" transform="rotate(-90 22 160)" text-anchor="middle">loss</text>
+
+          <!-- x labels -->
+          <g font-size="11" fill="currentColor" opacity="0.75" text-anchor="middle" font-family="monospace">
+            <text x="70" y="308">0</text>
+            <text x="186" y="308">60</text>
+            <text x="360" y="308">150</text>
+            <text x="650" y="308">300</text>
+          </g>
+          <text x="360" y="330" font-size="12" fill="currentColor" text-anchor="middle">época</text>
+
+          <!-- minimum marker -->
+          <line x1="186" y1="40" x2="186" y2="290" stroke="var(--good)" stroke-width="1.4" stroke-dasharray="5 4"></line>
+
+          <!-- train curve -->
+          <polyline points="70,51.7 108.7,105.8 147.3,192.5 186,277 263.3,286.3 456.7,289.4 650,289.8"
+                    fill="none" stroke="var(--accent)" stroke-width="2.6" stroke-linejoin="round"></polyline>
+          <!-- val curve -->
+          <polyline points="70,51.7 108.7,99.3 147.3,186 186,262.7 263.3,257.3 456.7,245.6 650,237.3"
+                    fill="none" stroke="var(--bad)" stroke-width="2.6" stroke-dasharray="7 4" stroke-linejoin="round"></polyline>
+
+          <circle cx="186" cy="262.7" r="5" fill="var(--good)"></circle>
+
+          <!-- annotations -->
+          <text x="196" y="58" font-size="12" fill="var(--good)" font-weight="600">época 60: acá había que parar</text>
+          <text x="196" y="74" font-size="11" fill="currentColor" opacity="0.75">el val_loss toca su mínimo</text>
+
+          <text x="470" y="270" font-size="12" fill="var(--accent)" font-weight="600">entrenamiento</text>
+          <text x="470" y="286" font-size="11" fill="currentColor" opacity="0.7">sigue bajando: memoriza</text>
+
+          <text x="470" y="216" font-size="12" fill="var(--bad)" font-weight="600">validación</text>
+          <text x="470" y="232" font-size="11" fill="currentColor" opacity="0.7">vuelve a subir: empeora</text>
+
+          <!-- legend -->
+          <line x1="300" y1="40" x2="330" y2="40" stroke="var(--accent)" stroke-width="2.6"></line>
+          <text x="336" y="44" font-size="11" fill="currentColor">train</text>
+          <line x1="300" y1="58" x2="330" y2="58" stroke="var(--bad)" stroke-width="2.6" stroke-dasharray="7 4"></line>
+          <text x="336" y="62" font-size="11" fill="currentColor">validation</text>
+        </svg>
+        <figcaption>
+          <b>Medido de verdad con el dataset Wine en esta app.</b> A partir de la época 60
+          el <code>val_loss</code> deja de bajar y empieza a subir: de 0.126 a 0.243.
+          La red no está mejorando, está memorizando. La señal de alarma no es que el
+          entrenamiento vaya bien — es que la validación vaya mal.
+        </figcaption>
+      </figure>
+
+      <div class="note warn">
+        <span class="note-label">La regla</span>
+        <p>
+          <strong>Mirá siempre la curva de validación, nunca la de entrenamiento sola.</strong>
+          Una red puede tener 100% en entrenamiento y ser inútil. El momento de parar es
+          cuando el <code>val_loss</code> toca su mínimo. Para eso existe
+          <span class="ui">Early stopping (val loss)</span>: lo hace por vos.
+        </p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 4 -->
+    <section id="dense">
+      <h2><span class="chapter">04</span>Workspace Dense (NN)</h2>
+      <p class="section-lede">
+        Cuatro etapas, en orden. La app te va llevando sola de una a la otra.
+      </p>
+
+      <h3 id="dense-data">Etapa 1 · Data</h3>
+      <p>
+        Acá elegís los datos y los preparás. El grupo <strong>Source</strong> te deja
+        usar un dataset de ejemplo o cargar tu archivo con <span class="ui">Load file...</span>
+        (CSV, TSV, Excel, JSON o Parquet).
+      </p>
+
+      <h4>Datasets de ejemplo</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Dataset</th><th>Qué tiene</th><th>Bueno para</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Iris</span></td><td>4 columnas, 3 clases de flor</td><td>Tu primer modelo. Fácil.</td></tr>
+            <tr><td><span class="ui">Wine</span></td><td>13 columnas, 3 tipos de vino</td><td>Ver overfitting con pocos datos.</td></tr>
+            <tr><td><span class="ui">Breast cancer</span></td><td>30 columnas, 2 clases</td><td>Clasificación binaria real.</td></tr>
+            <tr><td><span class="ui">Digits</span></td><td>64 columnas, 10 clases</td><td>Muchas clases a la vez.</td></tr>
+            <tr><td><span class="ui">Diabetes</span></td><td>10 columnas, número continuo</td><td>Regresión.</td></tr>
+            <tr><td><span class="ui">Two moons</span></td><td>2 columnas, 2 clases</td><td><strong>Probar que hacen falta capas ocultas.</strong></td></tr>
+            <tr><td><span class="ui">Concentric circles</span></td><td>2 columnas, 2 clases</td><td>Frontera imposible para una recta.</td></tr>
+            <tr><td><span class="ui">Positive sine</span></td><td>1 columna, número positivo</td><td>Probar Softplus y ReLU de salida.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Grupo Adaptation</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="ui">Target column</span></td>
+              <td>Qué columna querés <strong>predecir</strong>. Las demás son las entradas.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">Problem type</span></td>
+              <td>
+                <span class="ui">Auto-detect</span> lo adivina mirando la columna.
+                Podés forzar <span class="ui">Binary</span>, <span class="ui">Multiclass</span>
+                o <span class="ui">Regression</span>.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ui">Validation split</span></td>
+              <td>Qué proporción se aparta para el examen. 0.20 = 20%.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">Random seed</span></td>
+              <td>
+                El número que decide la mezcla al azar. <strong>Mismo seed, mismo
+                resultado.</strong> Cambialo para ver cuánto se mueve tu accuracy por pura suerte.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ui">Standardise numeric features</span></td>
+              <td>
+                Pone todas las columnas en la misma escala. <strong>Dejalo prendido.</strong>
+                Sin esto, una columna que va de 0 a 100000 aplasta a una que va de 0 a 1.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ui">Standardise the target</span></td>
+              <td>
+                Solo para regresión. <strong>Cuidado:</strong> esto hace que la mitad de
+                tus valores queden negativos, y una salida ReLU no puede dar negativos.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ui">Prepare data</span></td>
+              <td>Aplica todo y arma los datos. Recién acá el dataset existe.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Qué hace la app por vos</span>
+        <p>
+          Al preparar los datos rellena los valores faltantes, convierte las columnas de
+          texto en números (una columna nueva por cada categoría) y descarta columnas con
+          más de 50 categorías distintas. Todo eso lo cuenta en el resumen.
+        </p>
+      </div>
+
+      <h3 id="dense-arch">Etapa 2 · Architecture</h3>
+      <p>
+        Acá diseñás la red. El diagrama de la derecha se redibuja mientras tocás.
+      </p>
+
+      <h4>Input layer y Output layer</h4>
+      <p>
+        Los dos se <strong>bloquean</strong> cuando preparaste datos, y está bien que así
+        sea: la red no puede tener un número de entradas distinto al de columnas que
+        tienen tus datos. No es una limitación de la app, es aritmética.
+      </p>
+
+      <h4>Hidden layers</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">+ Add hidden layer</span></td><td>Agrega una capa. Hasta 12.</td></tr>
+            <tr><td><span class="ui">Units</span></td><td>Cuántas neuronas en esa capa.</td></tr>
+            <tr><td><span class="ui">Activation</span></td><td>La función que dobla el resultado. <code>relu</code> es la respuesta correcta el 90% de las veces.</td></tr>
+            <tr><td><span class="ui">Dropout</span></td><td>Apaga al azar ese porcentaje de neuronas en cada paso. Suena raro, pero evita que memorice. 0.2 es un valor típico.</td></tr>
+            <tr><td><span class="ui">Batch norm</span></td><td>Normaliza los valores dentro de la capa. Ayuda a que redes profundas entrenen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Output layer: las cinco salidas</h4>
+      <p>
+        Esta es la decisión más importante de toda la app, y la que más se equivoca la
+        gente. <strong>La salida tiene que corresponder al tipo de problema.</strong>
+        La app solo te deja elegir las que tienen sentido para tus datos.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 200" role="img" aria-label="Formas de las cinco funciones de salida: sigmoide en ese, lineal recta, ReLU quebrada en cero, Softplus curva suave positiva y Softmax como barras que suman uno">
+          <g font-size="12" font-weight="600" text-anchor="middle" fill="var(--ink)">
+            <text x="70" y="16">Sigmoid</text>
+            <text x="210" y="16">Linear</text>
+            <text x="350" y="16">ReLU</text>
+            <text x="490" y="16">Softplus</text>
+            <text x="632" y="16">Softmax</text>
+          </g>
+
+          <!-- sigmoid -->
+          <g stroke="currentColor" stroke-width="0.9" opacity="0.4">
+            <line x1="10" y1="110" x2="130" y2="110"></line><line x1="70" y1="30" x2="70" y2="130"></line>
+          </g>
+          <path d="M12,128 C45,128 55,40 70,40 C85,40 95,32 128,32" fill="none" stroke="var(--accent)" stroke-width="2.4"></path>
+          <text x="70" y="152" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">aplasta a 0…1</text>
+          <text x="70" y="168" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">¿sí o no?</text>
+          <text x="70" y="188" font-size="10" text-anchor="middle" font-family="monospace" fill="var(--muted)">1 neurona</text>
+
+          <!-- linear -->
+          <g stroke="currentColor" stroke-width="0.9" opacity="0.4">
+            <line x1="150" y1="110" x2="270" y2="110"></line><line x1="210" y1="30" x2="210" y2="130"></line>
+          </g>
+          <line x1="155" y1="132" x2="265" y2="34" stroke="var(--accent)" stroke-width="2.4"></line>
+          <text x="210" y="152" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">cualquier número</text>
+          <text x="210" y="168" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">¿cuánto?</text>
+          <text x="210" y="188" font-size="10" text-anchor="middle" font-family="monospace" fill="var(--muted)">1 neurona</text>
+
+          <!-- relu -->
+          <g stroke="currentColor" stroke-width="0.9" opacity="0.4">
+            <line x1="290" y1="110" x2="410" y2="110"></line><line x1="350" y1="30" x2="350" y2="130"></line>
+          </g>
+          <polyline points="295,110 350,110 405,38" fill="none" stroke="var(--accent)" stroke-width="2.4"></polyline>
+          <text x="350" y="152" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">corta en 0</text>
+          <text x="350" y="168" font-size="11" text-anchor="middle" fill="var(--bad)" opacity="0.95">puede morirse</text>
+          <text x="350" y="188" font-size="10" text-anchor="middle" font-family="monospace" fill="var(--muted)">1 neurona</text>
+
+          <!-- softplus -->
+          <g stroke="currentColor" stroke-width="0.9" opacity="0.4">
+            <line x1="430" y1="110" x2="550" y2="110"></line><line x1="490" y1="30" x2="490" y2="130"></line>
+          </g>
+          <path d="M435,108 C470,105 482,96 500,74 C515,56 528,44 545,36" fill="none" stroke="var(--accent)" stroke-width="2.4"></path>
+          <text x="490" y="152" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">siempre &gt; 0, suave</text>
+          <text x="490" y="168" font-size="11" text-anchor="middle" fill="var(--good)" opacity="0.95">nunca se muere</text>
+          <text x="490" y="188" font-size="10" text-anchor="middle" font-family="monospace" fill="var(--muted)">1 neurona</text>
+
+          <!-- softmax -->
+          <g>
+            <rect x="580" y="62" width="22" height="48" fill="var(--out)" opacity="0.85"></rect>
+            <rect x="608" y="34" width="22" height="76" fill="var(--out)"></rect>
+            <rect x="636" y="92" width="22" height="18" fill="var(--out)" opacity="0.6"></rect>
+            <line x1="574" y1="110" x2="664" y2="110" stroke="currentColor" stroke-width="0.9" opacity="0.4"></line>
+          </g>
+          <text x="591" y="56" font-size="9" text-anchor="middle" font-family="monospace" fill="currentColor">0.3</text>
+          <text x="619" y="28" font-size="9" text-anchor="middle" font-family="monospace" fill="currentColor">0.6</text>
+          <text x="647" y="86" font-size="9" text-anchor="middle" font-family="monospace" fill="currentColor">0.1</text>
+          <text x="619" y="152" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">suman 1 = probabilidad</text>
+          <text x="619" y="168" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.8">¿cuál de todas?</text>
+          <text x="619" y="188" font-size="10" text-anchor="middle" font-family="monospace" fill="var(--muted)">1 por clase</text>
+        </svg>
+        <figcaption>
+          <b>Cada salida responde una pregunta distinta.</b> Softmax reparte 100% entre
+          varias clases. Sigmoid da una sola probabilidad. Las otras tres devuelven un
+          número: Linear cualquiera, ReLU y Softplus solo positivos.
+        </figcaption>
+      </figure>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Salida</th><th>Cuándo usarla</th><th>Loss que le corresponde</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Softmax</span></td><td>3 o más clases (flor A, B o C)</td><td class="num-cell">categorical_crossentropy</td></tr>
+            <tr><td><span class="ui">Sigmoid</span></td><td>2 clases (sí o no)</td><td class="num-cell">binary_crossentropy</td></tr>
+            <tr><td><span class="ui">Linear</span></td><td>Un número cualquiera (temperatura)</td><td class="num-cell">mse</td></tr>
+            <tr><td><span class="ui">ReLU</span></td><td>Un número que no puede ser negativo</td><td class="num-cell">mse</td></tr>
+            <tr><td><span class="ui">Softplus</span></td><td>Igual que ReLU, pero más seguro</td><td class="num-cell">mse</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note trap">
+        <span class="note-label">Trampa clásica</span>
+        <p>
+          Elegir <span class="ui">ReLU</span> de salida y prender
+          <span class="ui">Standardise the target</span>. Estandarizar hace que la mitad
+          de los valores sean negativos, y ReLU corta todo lo negativo a cero: el modelo
+          <strong>nunca</strong> va a poder acertar esos. Softplus tiene la misma garantía
+          de positividad sin el gradiente muerto.
+        </p>
+      </div>
+
+      <h4>Optimisation</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Optimiser</span></td><td>La estrategia para mover los pesos. <code>adam</code> es la opción por defecto y casi siempre la correcta.</td></tr>
+            <tr><td><span class="ui">Learning rate</span></td><td><strong>El tamaño del paso.</strong> Muy chico: tarda una eternidad. Muy grande: se pasa de largo y el loss explota. 0.001 es el punto de partida.</td></tr>
+            <tr><td><span class="ui">L2 penalty</span></td><td>Castiga los pesos grandes. Otra forma de evitar que memorice.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="dense-train">Etapa 3 · Training</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Epochs</span></td><td>Cuántas vueltas completas da por tus datos.</td></tr>
+            <tr><td><span class="ui">Batch size</span></td><td>Cuántos ejemplos mira antes de ajustar los pesos. Chico: aprende mejor pero más lento. Grande: al revés.</td></tr>
+            <tr><td><span class="ui">Shuffle every epoch</span></td><td>Mezcla el orden en cada vuelta, para que no aprenda el orden.</td></tr>
+            <tr><td><span class="ui">Early stopping (val loss)</span></td><td><strong>Prendelo.</strong> Corta solo cuando el val_loss deja de mejorar y recupera los mejores pesos.</td></tr>
+            <tr><td><span class="ui">Patience</span></td><td>Cuántas épocas aguanta sin mejorar antes de cortar.</td></tr>
+            <tr><td><span class="ui">Train</span></td><td>Arranca. La ventana sigue respondiendo porque corre en otro hilo.</td></tr>
+            <tr><td><span class="ui">Stop</span></td><td>Frena de verdad, al terminar el lote actual.</td></tr>
+            <tr><td><span class="ui">Save model</span></td><td>Guarda el modelo entrenado en un archivo <code>.keras</code>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Cross-validation (validación cruzada)</h4>
+      <p>
+        Si tu dataset es chico, apartar un 20% te deja con poquísimas filas de examen.
+        Con 36 filas, <strong>una sola muestra vale 2.8 puntos de accuracy</strong>: la
+        diferencia entre 97.2% y 100% es un solo caso. Ese número no significa nada.
+      </p>
+      <p>
+        <span class="ui">Cross-validate</span> parte los datos en <em>k</em> pedazos,
+        entrena <em>k</em> modelos, y cada pedazo hace de validación exactamente una vez.
+        Te devuelve <strong>promedio ± desvío</strong>. El desvío es lo valioso: te dice
+        cuánto se mueve tu número por azar.
+      </p>
+      <div class="note warn">
+        <span class="note-label">Lo que casi todos entienden mal</span>
+        <p>
+          La validación cruzada <strong>no te deja un modelo</strong>. Entrena k modelos y
+          los tira a la basura. Lo único que te llevás es el número. Por eso la app
+          desactiva <span class="ui">Predict</span> y <span class="ui">Save model</span>
+          después: es un instrumento de medición, no de construcción. Cuando confiás en
+          el número, entrenás una vez normal y ese es tu modelo.
+        </p>
+      </div>
+
+      <h3 id="dense-predict">Etapa 4 · Predict</h3>
+      <p>
+        Escribís valores a mano y ves qué contesta la red. O apretás
+        <span class="ui">Random validation row</span> y te trae una fila real del examen,
+        con su respuesta verdadera, para comparar.
+      </p>
+      <p>
+        Tus valores pasan por <strong>exactamente</strong> la misma preparación que usó el
+        entrenamiento. Si no fuera así, el modelo estaría viendo números en otra escala y
+        contestaría cualquier cosa.
+      </p>
+    </section>
+
+    <!-- ============================================================ 5 -->
+    <section id="cnn-conceptos">
+      <h2><span class="chapter">05</span>Conceptos de CNN</h2>
+      <p class="section-lede">
+        Tres ideas nuevas. Todo lo del capítulo 3 sigue valiendo igual.
+      </p>
+
+      <h3 id="convolucion">5.1 · La convolución: una lupa que recorre</h3>
+      <p>
+        Una capa densa mira todos los píxeles a la vez y no sabe cuáles están pegados.
+        Una convolución hace lo contrario: usa una <strong>ventanita chica</strong> —el
+        filtro o <em>kernel</em>— y la va deslizando por toda la imagen.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 260" role="img" aria-label="Un filtro de tres por tres se posa sobre una parte de la imagen, multiplica y suma los nueve valores, y produce un solo número en el mapa de salida; después se corre y repite">
+          <defs>
+            <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <text x="0" y="16" font-size="12" fill="currentColor" opacity="0.8">Imagen de entrada (5×5)</text>
+
+          <!-- input grid -->
+          <g>
+            <rect x="0" y="28" width="150" height="150" fill="var(--surface-2)" stroke="currentColor" stroke-width="1" opacity="0.9"></rect>
+            <g stroke="currentColor" stroke-width="0.6" opacity="0.35">
+              <line x1="30" y1="28" x2="30" y2="178"></line><line x1="60" y1="28" x2="60" y2="178"></line>
+              <line x1="90" y1="28" x2="90" y2="178"></line><line x1="120" y1="28" x2="120" y2="178"></line>
+              <line x1="0" y1="58" x2="150" y2="58"></line><line x1="0" y1="88" x2="150" y2="88"></line>
+              <line x1="0" y1="118" x2="150" y2="118"></line><line x1="0" y1="148" x2="150" y2="148"></line>
+            </g>
+            <!-- kernel position -->
+            <rect x="0" y="28" width="90" height="90" fill="var(--out)" opacity="0.16"></rect>
+            <rect x="0" y="28" width="90" height="90" fill="none" stroke="var(--out)" stroke-width="2.6"></rect>
+            <!-- next position, dashed -->
+            <rect x="30" y="28" width="90" height="90" fill="none" stroke="var(--out)" stroke-width="1.4" stroke-dasharray="5 4" opacity="0.65"></rect>
+          </g>
+          <text x="45" y="198" font-size="11" text-anchor="middle" fill="var(--out)" font-weight="600">el filtro 3×3</text>
+          <text x="75" y="216" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.7">se corre de a un píxel →</text>
+
+          <!-- arrow to op -->
+          <line x1="160" y1="73" x2="204" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar4)"></line>
+
+          <!-- operation -->
+          <rect x="212" y="42" width="170" height="62" rx="8" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.5"></rect>
+          <text x="297" y="66" font-size="12" text-anchor="middle" fill="var(--ink)" font-weight="600">multiplica los 9</text>
+          <text x="297" y="84" font-size="12" text-anchor="middle" fill="var(--ink)" font-weight="600">y los suma</text>
+          <text x="297" y="120" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">los pesos del filtro son</text>
+          <text x="297" y="136" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">lo que la red aprende</text>
+
+          <line x1="392" y1="73" x2="436" y2="73" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar4)"></line>
+
+          <!-- output grid -->
+          <text x="446" y="16" font-size="12" fill="currentColor" opacity="0.8">Mapa de rasgos (3×3)</text>
+          <g>
+            <rect x="446" y="28" width="90" height="90" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect>
+            <g stroke="var(--data)" stroke-width="0.7" opacity="0.6">
+              <line x1="476" y1="28" x2="476" y2="118"></line><line x1="506" y1="28" x2="506" y2="118"></line>
+              <line x1="446" y1="58" x2="536" y2="58"></line><line x1="446" y1="88" x2="536" y2="88"></line>
+            </g>
+            <rect x="446" y="28" width="30" height="30" fill="var(--out)" opacity="0.4"></rect>
+          </g>
+          <text x="491" y="138" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.75">un número por posición</text>
+
+          <line x1="461" y1="128" x2="461" y2="150" stroke="var(--out)" stroke-width="1.4"></line>
+          <text x="461" y="166" font-size="11" text-anchor="middle" fill="var(--out)">esta celda ←</text>
+
+          <!-- the point -->
+          <line x1="0" y1="234" x2="700" y2="234" stroke="currentColor" stroke-width="1" opacity="0.15"></line>
+          <text x="0" y="254" font-size="12" fill="currentColor">
+            <tspan font-weight="600">El mismo filtro, con los mismos 9 pesos, se usa en TODA la imagen.</tspan>
+            <tspan fill="var(--muted)"> Por eso detecta un borde esté donde esté.</tspan>
+          </text>
+        </svg>
+        <figcaption>
+          <b>Esa reutilización es todo el truco.</b> Una capa densa necesitaría aprender
+          «borde arriba a la izquierda» y «borde abajo a la derecha» por separado. La
+          convolución aprende «borde» una vez y lo aplica en todos lados. Eso se llama
+          <em>invarianza traslacional</em>, y es gratis.
+        </figcaption>
+      </figure>
+
+      <h3 id="skip">5.2 · La conexión de salto (esto es ResNet)</h3>
+      <p>
+        Cuando las redes se hicieron muy profundas apareció un problema raro: las redes de
+        50 capas andaban <strong>peor</strong> que las de 20. Y no era por memorizar —
+        ni siquiera lograban aprenderse los datos de entrenamiento. Eran demasiado
+        difíciles de entrenar.
+      </p>
+      <p>
+        La solución fue ridículamente simple: agregar un <strong>atajo</strong> que saltea
+        las convoluciones y suma la entrada al final del bloque.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 300" role="img" aria-label="Comparación de dos bloques idénticos: el residual tiene un arco que saltea las dos convoluciones y suma la entrada, el plano no lo tiene">
+          <defs>
+            <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+            <marker id="ar5g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--good)"></path>
+            </marker>
+          </defs>
+
+          <!-- RESIDUAL -->
+          <text x="0" y="16" font-size="13" font-weight="600" fill="var(--good)">CON atajo — bloque residual</text>
+
+          <path d="M30,74 C30,42 180,42 268,42 L268,62" fill="none" stroke="var(--good)" stroke-width="2.4" marker-end="url(#ar5g)"></path>
+          <text x="150" y="36" font-size="11" text-anchor="middle" fill="var(--good)" font-weight="600">la entrada pasa de largo</text>
+
+          <g>
+            <rect x="0" y="76" width="56" height="34" rx="6" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.3"></rect>
+            <text x="28" y="97" font-size="11" text-anchor="middle" fill="var(--ink)">entrada</text>
+
+            <rect x="70" y="76" width="56" height="34" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.1"></rect>
+            <text x="98" y="97" font-size="11" text-anchor="middle" fill="var(--ink)">conv</text>
+
+            <rect x="140" y="76" width="56" height="34" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.1"></rect>
+            <text x="168" y="97" font-size="11" text-anchor="middle" fill="var(--ink)">conv</text>
+
+            <rect x="240" y="76" width="56" height="34" rx="6" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2"></rect>
+            <text x="268" y="97" font-size="14" text-anchor="middle" fill="var(--good)" font-weight="700">+</text>
+
+            <rect x="310" y="76" width="56" height="34" rx="6" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.3"></rect>
+            <text x="338" y="97" font-size="11" text-anchor="middle" fill="var(--ink)">salida</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1.3">
+            <line x1="58" y1="93" x2="66" y2="93" marker-end="url(#ar5)"></line>
+            <line x1="128" y1="93" x2="136" y2="93" marker-end="url(#ar5)"></line>
+            <line x1="198" y1="93" x2="236" y2="93" marker-end="url(#ar5)"></line>
+            <line x1="298" y1="93" x2="306" y2="93" marker-end="url(#ar5)"></line>
+          </g>
+          <text x="390" y="88" font-size="12" fill="currentColor">El bloque solo aprende la</text>
+          <text x="390" y="104" font-size="12" fill="currentColor" font-weight="600">corrección, no todo de cero.</text>
+
+          <line x1="0" y1="140" x2="700" y2="140" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+
+          <!-- PLAIN -->
+          <text x="0" y="170" font-size="13" font-weight="600" fill="var(--bad)">SIN atajo — bloque plano</text>
+
+          <g>
+            <rect x="0" y="200" width="56" height="34" rx="6" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.3"></rect>
+            <text x="28" y="221" font-size="11" text-anchor="middle" fill="var(--ink)">entrada</text>
+
+            <rect x="70" y="200" width="56" height="34" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.1"></rect>
+            <text x="98" y="221" font-size="11" text-anchor="middle" fill="var(--ink)">conv</text>
+
+            <rect x="140" y="200" width="56" height="34" rx="6" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.1"></rect>
+            <text x="168" y="221" font-size="11" text-anchor="middle" fill="var(--ink)">conv</text>
+
+            <rect x="310" y="200" width="56" height="34" rx="6" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.3"></rect>
+            <text x="338" y="221" font-size="11" text-anchor="middle" fill="var(--ink)">salida</text>
+          </g>
+          <g stroke="currentColor" stroke-width="1.3">
+            <line x1="58" y1="217" x2="66" y2="217" marker-end="url(#ar5)"></line>
+            <line x1="128" y1="217" x2="136" y2="217" marker-end="url(#ar5)"></line>
+            <line x1="198" y1="217" x2="306" y2="217" marker-end="url(#ar5)"></line>
+          </g>
+          <text x="252" y="182" font-size="11" text-anchor="middle" fill="var(--bad)">no hay arco acá</text>
+          <text x="390" y="212" font-size="12" fill="currentColor">Todo tiene que sobrevivir a las</text>
+          <text x="390" y="228" font-size="12" fill="currentColor">dos convoluciones. Sin atajo.</text>
+
+          <text x="0" y="270" font-size="12" fill="currentColor" font-weight="600">Mismas convoluciones. Misma profundidad. Mismos pesos iniciales.</text>
+          <text x="0" y="288" font-size="12" fill="var(--muted)">Lo único que cambia entre los dos dibujos es esa suma.</text>
+        </svg>
+        <figcaption>
+          <b>El checkbox <span class="ui">Use skip connections</span> quita exactamente
+          esa suma, nada más.</b> Por eso la comparación es honesta: no estás comparando
+          dos redes distintas, estás comparando la misma red con y sin el atajo.
+        </figcaption>
+      </figure>
+
+      <h4>Qué vas a ver de verdad</h4>
+      <p>
+        Esto está medido en esta misma app, con 900 formas sintéticas de 32×32:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Profundidad</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="num-cell">8 capas</td>
+              <td>El residual gana por 29 puntos a las 8 épocas. Pero es <em>velocidad</em>: dale tiempo y el plano alcanza.</td>
+            </tr>
+            <tr>
+              <td class="num-cell">20 capas</td>
+              <td><strong>Empatan en 0.9944</strong> después de 30 épocas. El plano incluso llegó antes.</td>
+            </tr>
+            <tr>
+              <td class="num-cell">50 capas</td>
+              <td>
+                Residual: validación 0.978, <strong>entrenamiento 1.000</strong>.<br>
+                Plano: validación 0.639, <strong>entrenamiento 0.943</strong>.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note warn">
+        <span class="note-label">Leé la fila de 50 capas de nuevo</span>
+        <p>
+          Mirá la accuracy de <strong>entrenamiento</strong>. A 50 capas la red plana
+          <em>ni siquiera puede memorizar sus propios datos de entrenamiento</em>. Eso no
+          es overfitting: es un fracaso para aprender. Más profundidad la hizo más difícil
+          de <em>entrenar</em>. Ese es exactamente el problema que ResNet vino a resolver.
+        </p>
+        <p>
+          Por debajo de 20 capas el atajo casi solo compra velocidad. No dejes que una
+          prueba corta te convenza de que las redes planas no pueden aprender. Usá el
+          botón <span class="ui">Preset: 50 layers</span> para llegar a la profundidad
+          donde el efecto real aparece.
+        </p>
+      </div>
+
+      <h3 id="transfer">5.3 · Transfer learning: no empezar de cero</h3>
+      <p>
+        Entrenar una red grande desde cero necesita millones de imágenes. Pero alguien ya
+        lo hizo. <strong>Transfer learning</strong> es agarrar esa red ya entrenada,
+        congelarla, y enseñarle solamente tus clases.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 700 220" role="img" aria-label="Una imagen entra a un backbone ResNet50 congelado de 23 millones de parámetros que no cambian, y solo una cabeza pequeña de 131 mil parámetros aprende">
+          <defs>
+            <marker id="ar6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect x="0" y="66" width="70" height="60" rx="7" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.4"></rect>
+          <text x="35" y="92" font-size="12" text-anchor="middle" fill="var(--ink)">tu</text>
+          <text x="35" y="108" font-size="12" text-anchor="middle" fill="var(--ink)">imagen</text>
+
+          <line x1="76" y1="96" x2="112" y2="96" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"></line>
+
+          <!-- frozen backbone -->
+          <rect x="120" y="44" width="300" height="104" rx="10" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.6" stroke-dasharray="7 4"></rect>
+          <text x="270" y="72" font-size="14" text-anchor="middle" fill="var(--ink)" font-weight="700">ResNet50 · CONGELADO</text>
+          <text x="270" y="94" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.85">ya sabe bordes, texturas y formas</text>
+          <text x="270" y="116" font-size="13" text-anchor="middle" font-family="monospace" fill="var(--muted)" font-weight="600">23.587.712 parámetros</text>
+          <text x="270" y="136" font-size="12" text-anchor="middle" fill="var(--muted)" font-weight="600">que NO cambian</text>
+
+          <line x1="426" y1="96" x2="462" y2="96" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"></line>
+
+          <!-- trainable head -->
+          <rect x="470" y="58" width="140" height="76" rx="10" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2.2"></rect>
+          <text x="540" y="84" font-size="13" text-anchor="middle" fill="var(--ink)" font-weight="700">tu cabeza</text>
+          <text x="540" y="104" font-size="12" text-anchor="middle" font-family="monospace" fill="var(--good)" font-weight="600">131.331</text>
+          <text x="540" y="122" font-size="12" text-anchor="middle" fill="var(--good)" font-weight="600">esto sí aprende</text>
+
+          <line x1="616" y1="96" x2="650" y2="96" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar6)"></line>
+          <text x="678" y="100" font-size="12" text-anchor="middle" fill="var(--out)" font-weight="600">clase</text>
+
+          <text x="0" y="22" font-size="12" fill="currentColor" opacity="0.85">Solo el <tspan font-weight="700" fill="var(--good)">0.55%</tspan> de la red aprende. El otro 99.45% llegó sabiendo.</text>
+
+          <text x="0" y="182" font-size="12" fill="currentColor" font-weight="600">Medido en esta app: 240 imágenes de entrenamiento, 3 épocas, 100% de validación.</text>
+          <text x="0" y="202" font-size="12" fill="var(--muted)">Desde cero, con esos mismos datos, no llegás ni cerca.</text>
+        </svg>
+        <figcaption>
+          <b>Esto rompe la regla de «las redes necesitan muchos datos».</b> El dataset
+          gigante existió — pero no era tuyo. Vos heredaste el trabajo ya hecho y solo
+          pagaste la última capa.
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ 6 -->
+    <section id="cnn">
+      <h2><span class="chapter">06</span>Workspace Convolutional (CNN)</h2>
+      <p class="section-lede">
+        Las mismas cuatro etapas, adaptadas a imágenes.
+      </p>
+
+      <h3 id="cnn-images">Etapa 1 · Images</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fuente</th><th>Qué es</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><span class="ui">Synthetic shapes</span></td>
+              <td>
+                Dibuja círculos, cuadrados, triángulos y cruces en el momento.
+                <strong>No descarga nada.</strong> Empezá por acá.
+              </td>
+            </tr>
+            <tr>
+              <td><span class="ui">CIFAR-10</span></td>
+              <td>Fotos reales de 10 categorías. Mucho más difícil. Descarga ~170 MB la primera vez y te pregunta antes.</td>
+            </tr>
+            <tr>
+              <td><span class="ui">Image folder</span></td>
+              <td>Tus propias fotos: una carpeta por clase (<code>fotos/gatos/</code>, <code>fotos/perros/</code>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Opciones de las formas sintéticas</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Images</span></td><td>Cuántas imágenes generar. 900 anda bien.</td></tr>
+            <tr><td><span class="ui">Shape classes</span></td><td>Cuántas formas distintas (de 2 a 4).</td></tr>
+            <tr><td><span class="ui">Image size</span></td><td>32, 48 o 64 píxeles de lado. Más grande = más lento.</td></tr>
+            <tr><td><span class="ui">Noise</span></td><td>Cuánta suciedad agregarle. Sube la dificultad.</td></tr>
+            <tr><td><span class="ui">Rotate</span></td><td>Cada forma sale girada al azar.</td></tr>
+            <tr><td><span class="ui">Move</span></td><td><strong>Cada forma aparece en un lugar distinto.</strong> Apagalo y la convolución pierde casi toda su ventaja.</td></tr>
+            <tr><td><span class="ui">Build dataset</span></td><td>Genera todo. Las imágenes aparecen a la derecha.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="cnn-arch">Etapa 2 · Architecture</h3>
+      <p>Dos modos, y el selector de arriba cambia todo lo de abajo.</p>
+
+      <h4>Modo «From scratch»</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Stages</span></td><td>Cuántos «escalones». Cada uno achica la imagen a la mitad y duplica los filtros.</td></tr>
+            <tr><td><span class="ui">Blocks/stage</span></td><td>Cuántos bloques residuales por escalón. <strong>Este es el que controla la profundidad.</strong></td></tr>
+            <tr><td><span class="ui">Stem filters</span></td><td>Cuántos filtros arranca usando. Más = más capacidad y más lento.</td></tr>
+            <tr><td><span class="ui">Dropout</span></td><td>Igual que en la red densa.</td></tr>
+            <tr><td><span class="ui">Learning rate</span></td><td>Igual que en la red densa.</td></tr>
+            <tr><td><span class="ui">Use skip connections</span></td><td><strong>El interruptor de ResNet.</strong> Apagarlo quita solo la suma.</td></tr>
+            <tr><td><span class="ui">Augment</span></td><td>Voltea y mueve las imágenes al azar durante el entrenamiento, para que vea más variedad.</td></tr>
+            <tr><td><span class="ui">Preset: 50 layers</span></td><td>Configura la profundidad donde el problema de degradación aparece de verdad. ~2 min por brazo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Modo «Transfer learning»</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Backbone</span></td><td><code>ResNet50</code> o <code>ResNet50V2</code>. La red preentrenada que vas a usar.</td></tr>
+            <tr><td><span class="ui">Head units</span></td><td>El tamaño de tu capa nueva, la única que aprende.</td></tr>
+            <tr><td><span class="ui">Freeze backbone</span></td><td><strong>Dejalo prendido.</strong> Descongelarlo en CPU es lentísimo.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <span class="note-label">Descarga</span>
+        <p>
+          La primera vez baja ~98 MB de pesos de ImageNet. La app te avisa antes y te
+          muestra el aviso en amarillo si todavía no los tiene.
+        </p>
+      </div>
+
+      <h3 id="cnn-train">Etapa 3 · Training</h3>
+      <p>
+        Igual que en la red densa, más un botón que no existe del otro lado:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Control</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">Train</span></td><td>Entrena una vez, con la configuración actual.</td></tr>
+            <tr>
+              <td><span class="ui">Compare skip on/off</span></td>
+              <td>
+                <strong>Entrena la misma red dos veces</strong> —una con atajo y otra sin—
+                desde los mismos pesos iniciales, y superpone las dos curvas. Solo
+                funciona en modo «from scratch».
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note warn">
+        <span class="note-label">Qué mirar en la comparación</span>
+        <p>
+          No mires solo el accuracy de validación. Mirá la accuracy de
+          <strong>entrenamiento</strong> del brazo plano. Si no llega a 1.0, encontraste
+          la degradación. Si llega, el atajo solo te estaba dando velocidad.
+        </p>
+      </div>
+
+      <h3 id="cnn-predict">Etapa 4 · Predict</h3>
+      <p>
+        <span class="ui">Show predictions</span> toma un puñado de imágenes de validación
+        al azar y muestra qué dijo la red. <strong>Marco verde</strong> = acertó,
+        <strong>marco rojo</strong> = se equivocó, y debajo te dice cuál era la correcta.
+      </p>
+      <p>
+        El resultado dice «4 de 8 correctas en este lote» — con la aclaración de que un
+        lote tan chico no significa nada. El número confiable sigue siendo el de la etapa
+        de Training.
+      </p>
+    </section>
+
+    <!-- ============================================================ 7 -->
+    <section id="experimentos">
+      <h2><span class="chapter">07</span>Siete experimentos</h2>
+      <p class="section-lede">
+        Acá está lo que más te va a enseñar. Cada uno rompe algo a propósito, porque ver
+        fallar una red enseña más que verla funcionar.
+      </p>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">01</span><h3>Sacá todas las capas ocultas</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Dense · dataset <span class="ui">Two moons</span></dd>
+          <dt>Hacé</dt><dd>En Architecture, apretá <span class="ui">Clear all</span>. Entrená 60 épocas.</dd>
+          <dt>Vas a ver</dt><dd>El accuracy se clava cerca de 85% y no sube más.</dd>
+          <dt>Por qué</dt><dd>Sin capas ocultas esto es una regresión logística: solo puede trazar una <strong>línea recta</strong>. Y dos lunas entrelazadas no se separan con una recta.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Para qué sirven las capas ocultas. Volvé a agregar dos y mirá la diferencia.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">02</span><h3>Rompé el learning rate</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Dense · cualquier dataset</dd>
+          <dt>Hacé</dt><dd>Poné <span class="ui">Learning rate</span> en <code>0.5</code>. Entrená.</dd>
+          <dt>Vas a ver</dt><dd>El loss sube en vez de bajar, o salta como loco.</dd>
+          <dt>Por qué</dt><dd>El paso es tan grande que se pasa del mínimo de largo, todas las veces. Como bajar una escalera de a saltos de tres metros.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Probá ahora <code>0.00001</code>: no explota, pero no aprende nada en 60 épocas. El learning rate es un equilibrio.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">03</span><h3>ReLU contra un objetivo negativo</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Dense · <span class="ui">Positive sine</span></dd>
+          <dt>Hacé</dt><dd>Prendé <span class="ui">Standardise the target</span>, preparate los datos y elegí salida <span class="ui">ReLU</span>.</dd>
+          <dt>Vas a ver</dt><dd>El loss se estanca y no baja.</dd>
+          <dt>Por qué</dt><dd>Estandarizar puso la mitad de los objetivos en negativo. ReLU corta todo lo negativo a cero. El modelo <em>no puede</em> llegar ahí ni queriendo.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Cambiá a <span class="ui">Softplus</span> sin tocar nada más. Funciona. Elegir la salida no es un detalle.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">04</span><h3>Cazá el overfitting</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Dense · <span class="ui">Wine</span></dd>
+          <dt>Hacé</dt><dd>Dos capas ocultas de 16 y 8. Entrená <strong>300 épocas</strong> sin early stopping.</dd>
+          <dt>Vas a ver</dt><dd>El loss de entrenamiento se va casi a cero. El de validación toca fondo cerca de la época 60 y después <strong>sube</strong>.</dd>
+          <dt>Por qué</dt><dd>La red memorizó las 142 filas de entrenamiento. Después de eso solo puede volverse más engreída, no más correcta.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Repetí con <span class="ui">Early stopping (val loss)</span> prendido y patience 10. Corta solo, cerca de la 60.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">05</span><h3>Cambiá el seed y perdé la fe</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Dense · <span class="ui">Wine</span></dd>
+          <dt>Hacé</dt><dd>Entrená. Anotá el accuracy. Ahora cambiá <span class="ui">Random seed</span> a 0, 1, 7, 99 y repetí.</dd>
+          <dt>Vas a ver</dt><dd>El número se mueve varios puntos. Mismo modelo, mismos datos.</dd>
+          <dt>Por qué</dt><dd>Con solo 36 filas de validación, <strong>un solo caso vale 2.8 puntos</strong>. Ese tercer decimal que estabas mirando no existe.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Ahora usá <span class="ui">Cross-validate</span> con k=5. Te da promedio ± desvío. <em>Eso</em> es un resultado honesto.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">06</span><h3>El atajo de ResNet, a 50 capas</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>CNN · <span class="ui">Synthetic shapes</span>, 900 imágenes</dd>
+          <dt>Hacé</dt><dd>Primero <span class="ui">Compare skip on/off</span> con los valores por defecto. Después apretá <span class="ui">Preset: 50 layers</span> y compará de nuevo.</dd>
+          <dt>Vas a ver</dt><dd>Con 8 capas el atajo gana por velocidad. Con 50, el brazo plano <strong>ni siquiera llega a 1.0 en entrenamiento</strong>.</dd>
+          <dt>Por qué</dt><dd>A esa profundidad la red plana no puede optimizar. No es que memorice de más: no logra aprender.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Por qué existe ResNet — y por qué la respuesta fue un atajo y no más regularización.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">07</span><h3>Apagá el movimiento</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>CNN · <span class="ui">Synthetic shapes</span></dd>
+          <dt>Hacé</dt><dd>Entrená normal. Después apagá <span class="ui">Move</span>, reconstruí el dataset y entrená igual.</dd>
+          <dt>Vas a ver</dt><dd>Sin movimiento el problema se vuelve mucho más fácil: todas las formas están en el mismo lugar.</dd>
+          <dt>Por qué</dt><dd>La invarianza traslacional solo vale cuando hay traslación. Si nada se mueve, la ventaja de la convolución se evapora.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Que una arquitectura no es mejor «en abstracto»: es mejor <em>para una forma de datos</em>.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <!-- ============================================================ 8 -->
+    <section id="glosario">
+      <h2><span class="chapter">08</span>Glosario</h2>
+      <p class="section-lede">Las palabras que más vas a leer, en una línea cada una.</p>
+
+      <dl class="glossary">
+        <div><dt>Peso (weight)</dt><dd>Un número que dice cuánto le importa una entrada. Es lo que la red aprende.</dd></div>
+        <div><dt>Sesgo (bias)</dt><dd>Un número extra que se suma, y le permite a la neurona correr su umbral.</dd></div>
+        <div><dt>Activación</dt><dd>La función que dobla la salida de una neurona. Sin ella todo sería una línea recta.</dd></div>
+        <div><dt>Época (epoch)</dt><dd>Una vuelta completa por todos tus datos de entrenamiento.</dd></div>
+        <div><dt>Lote (batch)</dt><dd>El puñado de ejemplos que mira antes de ajustar los pesos una vez.</dd></div>
+        <div><dt>Loss</dt><dd>Cuán equivocada está, contando la confianza. Más bajo es mejor.</dd></div>
+        <div><dt>Accuracy</dt><dd>Qué porcentaje acertó. Más alto es mejor.</dd></div>
+        <div><dt>Learning rate</dt><dd>El tamaño del paso al corregir los pesos.</dd></div>
+        <div><dt>Overfitting</dt><dd>Memorizar los datos de entrenamiento en vez de aprender el patrón.</dd></div>
+        <div><dt>Underfitting</dt><dd>Lo contrario: el modelo es demasiado simple para el problema.</dd></div>
+        <div><dt>Dropout</dt><dd>Apagar neuronas al azar durante el entrenamiento, para que no memorice.</dd></div>
+        <div><dt>Validación</dt><dd>Los datos que la red nunca ve al entrenar, y que sirven de examen.</dd></div>
+        <div><dt>Validación cruzada</dt><dd>Repetir el examen k veces con pedazos distintos, y promediar.</dd></div>
+        <div><dt>Softmax</dt><dd>Salida que reparte 100% entre varias clases.</dd></div>
+        <div><dt>Convolución</dt><dd>Un filtro chico que recorre toda la imagen buscando el mismo patrón.</dd></div>
+        <div><dt>Filtro / kernel</dt><dd>La ventanita de pesos que se desliza. Lo que la convolución aprende.</dd></div>
+        <div><dt>Conexión de salto</dt><dd>El atajo que suma la entrada del bloque a su salida. El corazón de ResNet.</dd></div>
+        <div><dt>Backbone</dt><dd>La red grande preentrenada que usás como base en transfer learning.</dd></div>
+        <div><dt>Transfer learning</dt><dd>Reusar una red ya entrenada y enseñarle solo tus clases.</dd></div>
+        <div><dt>Invarianza traslacional</dt><dd>Reconocer algo sin importar en qué parte de la imagen esté.</dd></div>
+      </dl>
+
+      <div class="note" style="margin-top:32px">
+        <span class="note-label">Una última cosa</span>
+        <p>
+          Todos los números que aparecen en este manual están <strong>medidos en esta
+          app</strong>, no copiados de un libro. Si repetís los experimentos te van a dar
+          parecidos, no idénticos — y entender <em>por qué</em> no son idénticos es,
+          probablemente, la lección más importante de todas.
+        </p>
+      </div>
+    </section>
+
+  </main>
+</div>

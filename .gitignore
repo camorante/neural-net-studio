@@ -216,3 +216,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Neural Net Studio ---
+# Saved Keras models exported from the app
+*.keras
+*.h5
+
+# Downloaded / cached image datasets (CIFAR-10 archive, partial downloads)
+data/
+*.part
+cifar-10-batches-py/
+cifar-10-python.tar.gz
+
+# Editors
+.idea/
+.vscode/
+
+# Scratch dir left behind by tooling
+.atl/

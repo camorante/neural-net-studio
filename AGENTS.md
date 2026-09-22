@@ -1,0 +1,301 @@
+# AGENTS.md
+
+Working brief for AI coding agents on this repository. Humans should read
+`README.md` first; this file is about how to change the code without breaking
+what it teaches.
+
+---
+
+## What this project is
+
+An interactive desktop app for **learning** how neural networks work. Students
+(15+) build a network with spin boxes and combos, train it on real data, and
+watch what happens. PyQt6 for the interface, TensorFlow/Keras for the models.
+
+The audience changes the engineering bar in one specific way: **this app must
+not teach something false.** A number shown on screen, a claim in a log line or
+a hint under a control is a teaching statement. Several of the invariants below
+exist only because a plausible-looking shortcut would have quietly taught a
+wrong lesson.
+
+---
+
+## Setup and commands
+
+Everything runs inside `.venv`. TensorFlow pins exact versions of numpy,
+protobuf and typing-extensions, so a global install eventually breaks an
+unrelated project.
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1          # PowerShell
+pip install -r requirements.txt
+```
+
+| Task | Command |
+|---|---|
+| Run the app | `.\.venv\Scripts\python.exe main.py` |
+| Syntax check everything | `.\.venv\Scripts\python.exe -c "import ast,pathlib;[ast.parse(p.read_text(encoding='utf-8')) for p in pathlib.Path('nnstudio').rglob('*.py')]"` |
+| Import check | `.\.venv\Scripts\python.exe -c "import main"` |
+
+There is no git repository here and no CI. Do not assume either.
+
+---
+
+## The one architectural rule
+
+**`nnstudio/core/` contains no Qt.** Ever.
+
+Everything in `core/` is plain Python that could run in a notebook, a script or
+a test with no display. Everything in `ui/` is an adapter over it. This is what
+makes the logic testable without a window, and it is the first thing to check
+after any change:
+
+```bash
+.\.venv\Scripts\python.exe -c "import pathlib;print([str(p) for p in pathlib.Path('nnstudio/core').rglob('*.py') if 'PyQt6' in p.read_text(encoding='utf-8')] or 'clean')"
+```
+
+The two halves meet in exactly one place: `ui/workers.py`, which wraps a plain
+`core` run object in a `QThread` and turns its callbacks into signals.
+
+---
+
+## Where new code goes
+
+| You are adding… | It belongs in |
+|---|---|
+| A dataset source, encoding or split rule | `core/dataset.py` (tabular) or `core/vision.py` (images) |
+| A layer type, activation or output head | `core/model_builder.py` (dense) or `core/resnet.py` (conv) |
+| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py` |
+| A control the user touches | the matching stage panel in `ui/` or `ui/vision/` |
+| Orchestration between stages | `ui/dense_workspace.py` or `ui/vision_workspace.py` |
+| A background job | a `QThread` in `ui/workers.py` — never inline |
+| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/image_grid.py`, `ui/plots.py` |
+| A colour or a widget style | `ui/theme.py` only. No inline stylesheets in panels. |
+
+The two workspaces are deliberately independent. `DenseWorkspace` and
+`VisionWorkspace` share the theme and the plotting widgets and nothing else —
+no shared model, no shared dataset, no shared worker. A convolutional network
+is not a later stage of a dense one, and the structure says so. Keep it that
+way.
+
+---
+
+## Invariants — do not break these
+
+Each of these was either a bug that shipped, or a shortcut that would have
+taught something false. There are eleven.
+
+### 1. Preprocessing is fit on training rows only
+
+`_assemble()` in `core/dataset.py` fits the `ColumnTransformer` on
+`train_idx` and only then transforms validation. Fitting on all rows first —
+the obvious shortcut — leaks validation statistics (the scaler's mean, the
+imputer's median) into training and inflates every score the app reports.
+
+Guard: the training split's per-column mean is ~0 while the pooled mean is not.
+
+```python
+assert abs(bundle.x_train.mean(axis=0)).max() < 1e-5
+assert abs(np.vstack([bundle.x_train, bundle.x_val]).mean(axis=0)).max() > 1e-3
+```
+
+### 2. Cross-validation leaves no model behind
+
+K-fold trains k models and discards all of them. `_start_crossval()` in
+`ui/dense_workspace.py` clears `self._model`, clears the history, and disables
+both **Predict** and **Save model**. This shipped broken once: a model from an
+earlier training run survived and the buttons stayed live, pointing at
+something unrelated to the estimate on screen.
+
+Cross-validation measures an architecture. It does not produce a model.
+
+### 3. Every output head keeps its matching loss
+
+`OUTPUT_MODES` in `core/model_builder.py` pairs each head with the loss that
+belongs with it, and `MODES_BY_TASK` restricts which heads a detected task can
+select. Softmax on a regression target is not a creative choice, it is a broken
+model, and the UI must keep refusing it.
+
+### 4. TensorFlow is imported lazily, inside the worker thread
+
+Only `core/model_builder.keras_module()` imports Keras, and it is called from
+the training thread. `main.py` sets `TF_CPP_MIN_LOG_LEVEL` before anything can
+import it. A top-level `import tensorflow` anywhere in `ui/` or `main.py` adds
+~8 seconds to startup — revert it.
+
+### 5. Training never runs on the GUI thread
+
+Always a `QThread` from `ui/workers.py`. `stop()` must genuinely stop: the
+Keras callback checks the flag in `on_train_batch_end`, not only at epoch
+boundaries, so Stop responds within a batch.
+
+### 6. A frozen backbone is called with `training=False`
+
+In `core/resnet.build_transfer()`. Without it the backbone's batch-norm
+statistics keep drifting while it is supposedly frozen, and the head learns
+against a moving target.
+
+### 7. `use_skip=False` removes only the addition
+
+`residual_block()` in `core/resnet.py` keeps identical convolutions, identical
+depth and identical initialisation in both arms; only the `Add` disappears.
+`SkipComparisonRun` re-seeds with `keras.utils.set_random_seed(1234)` before
+each arm so the comparison is fair. If you touch the block, keep the ablation
+honest — it is the one experiment the whole CNN workspace exists for.
+
+The residual arm does carry ~3.7% more parameters (the 1x1 projections on
+stride-2 stages). `format_comparison()` states this explicitly rather than
+claiming the arms are identical. Keep that admission.
+
+### 8. Combos go through `compact_combo()`
+
+`QComboBox.minimumSizeHint()` is wide enough for its **longest item**. One
+descriptive entry ("From scratch - build the residual stack yourself") forced a
+666px minimum on a single combo, which pushed the sidebar's minimum past the
+column it lives in — and Qt then compensated by squeezing every spin box below
+its own minimum height, clipping the values inside.
+
+That was a reported bug. A height symptom with a width cause. Any new combo
+with descriptive entries goes through `compact_combo()` in `ui/widgets.py`.
+
+### 9. Layout floors are load-bearing
+
+- `min-height: 20px` on inputs in `ui/theme.py` stops any layout from crushing them.
+- Tall panels wrap in `scrollable()` from `ui/widgets.py`, which uses
+  `ScrollBarAsNeeded` horizontally — never `AlwaysOff`, which clips silently.
+- Wrapping `hint()` labels use `QSizePolicy.Ignored` horizontally so they never
+  dictate panel width.
+
+### 10. Long builds report progress and can be cancelled
+
+Anything that can take more than a couple of seconds - the CIFAR-10 download,
+drawing thousands of shapes, reading a folder of photos - takes
+`(on_progress, should_stop)` and honours both. A disabled button with no
+feedback is indistinguishable from a crash; that was a real bug report.
+
+`ensure_cifar10_archive()` in `core/vision.py` downloads into a `.part` file
+and only renames it once the SHA-256 matches, so an interrupted transfer can
+never be mistaken for a finished one. It resumes with a `Range` header, which
+matters because the host serves at ~0.1 MB/s and a full transfer is ~30
+minutes. Do not replace it with `keras.datasets.cifar10.load_data()` alone:
+that has no progress, no cancel and no resume.
+
+### 11. Preparation settings are reused, not re-read
+
+`DataPanel.current_spec()` returns the `PreparationSpec` the loaded bundle was
+actually built with. Cross-validation reuses it so the folds match the
+holdout's settings instead of whatever the widgets happen to show now.
+
+---
+
+## How to verify a change
+
+There is **no committed test suite** (see Known gaps). Until there is, verify
+headlessly like this.
+
+### Core logic — no display needed
+
+```python
+import os; os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+from nnstudio.core import dataset as ds
+from nnstudio.core.model_builder import LayerSpec, NetworkConfig
+from nnstudio.core.trainer import TrainingRequest, TrainingRun
+
+frame, target = ds.load_builtin("Iris - 4 features, 3 classes")
+bundle = ds.PreparationSpec(frame, target, name="Iris").prepare()
+cfg = NetworkConfig(bundle.n_inputs, bundle.n_outputs,
+                    [LayerSpec(16, "relu")], "softmax", "adam", 0.01)
+print(TrainingRun(TrainingRequest(cfg, bundle, epochs=3)).run()["final_scores"])
+```
+
+### UI — offscreen Qt
+
+```python
+import os; os.environ["QT_QPA_PLATFORM"] = "offscreen"
+from PyQt6.QtWidgets import QApplication
+from nnstudio.ui.main_window import MainWindow
+from nnstudio.ui.theme import apply_theme
+app = QApplication([]); apply_theme(app)
+win = MainWindow(); win.show(); app.processEvents()
+```
+
+Drive real widgets (`panel.build_button.click()`), not private methods, so the
+signal wiring is exercised. For a run that finishes on a thread, block on a
+`QEventLoop` connected to `worker.finished`, with a `QTimer.singleShot`
+timeout as a safety net.
+
+Render a frame with `QPixmap(win.size()); win.render(pix); pix.save(path)`.
+
+### Two measurement caveats
+
+- **Offscreen has no Segoe UI.** It falls back to a font with much wider
+  metrics, so `minimumSizeHint().width()` readings are inflated roughly 2x.
+  **Height** readings offscreen do match a real screen and are trustworthy.
+  Never chase a width number from an offscreen render — confirm with the user.
+- Modal dialogs block a headless run. Patch them in the module under test:
+  `module.QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes)`.
+
+---
+
+## Conventions
+
+- **English** for code, identifiers, comments, UI copy, logs and docs.
+  `manual.html` is the single deliberate exception: it is Spanish because its
+  audience is the instructor's Spanish-speaking students, and it keeps the UI
+  control names in English because that is what is on the screen.
+- Comments explain **why**, not what. A comment restating the line below it is
+  noise; a comment explaining why the shortcut was rejected is the valuable one.
+- No emoji anywhere in code, UI or logs.
+- Docstrings on every module and on any function whose purpose is not obvious
+  from its name.
+- Dataclasses for configuration objects; they cross the core/ui boundary and
+  `dataclasses.replace()` is used to vary one field.
+- Errors surface to the user through a `QMessageBox` **and** the log, with the
+  first paragraph of the message as the dialog text.
+
+---
+
+## Measured facts — do not contradict these
+
+These numbers appear in the README, the app's own log output and `manual.html`.
+They were measured in this project, not copied from a paper. If you change
+defaults or the model code, re-measure before editing the claims.
+
+| Claim | Value |
+|---|---|
+| Skip connections, 8 layers, 8 epochs | residual +29 points |
+| Skip connections, 20 layers, 30 epochs | **tied at 0.9944** — plain caught up |
+| Skip connections, 50 layers, 18 epochs | residual val 0.978 / train 1.000; plain val 0.639 / **train 0.943** |
+| Transfer learning, 240 images, 3 epochs | 100% val accuracy, 131,331 of 23,719,043 trainable (**0.55%**) |
+| Wine overfitting | `val_loss` minimum at epoch 60, rising to 0.243 by epoch 300 |
+| Wine validation split | 36 rows, so one sample is worth **2.78 accuracy points** |
+
+The 50-layer row is the important one, and the diagnostic is **training**
+accuracy: a deep plain stack that cannot fit its own training data is failing
+to optimise, not overfitting. Below ~20 layers the shortcut mostly buys
+convergence speed — `format_comparison()` detects which of the two lessons
+applies and says so. Do not simplify that into "plain networks cannot learn".
+
+---
+
+## Known gaps
+
+Honest list, roughly by value:
+
+1. **No committed test suite.** The verification scripts used during
+   development lived in a temp directory and are gone. A `tests/` folder with
+   the core, GUI-construction, end-to-end training, k-fold and two-workspace
+   checks is the single highest-value addition to this repo.
+2. **No decision-boundary plot** for the 2D datasets (two moons, circles).
+   It would make the "you need hidden layers" lesson visual instead of numeric.
+3. **No gradient-boosting baseline** next to the dense network. Measurements
+   during development showed trees beating the MLP on most tabular shapes; a
+   built-in baseline would make that comparison available to students.
+4. **No feature-map visualisation** for the CNN. Showing what the first
+   convolution actually responds to is the most "see how it works" thing still
+   missing.
+5. `nnstudio/ui/vision_workspace.py` and `dense_workspace.py` share a fair
+   amount of orchestration shape. Extracting a common base is tempting —
+   resist it unless the duplication actually hurts, because the independence of
+   the two paths is the point.
