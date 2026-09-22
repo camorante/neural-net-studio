@@ -254,8 +254,12 @@ first version of this formatter did claim a win from a 2-epoch sweep.
 
 ## How to verify a change
 
-There is **no committed test suite** (see Known gaps). Until there is, verify
-headlessly like this.
+Start with the committed suites — `python tests/run_all.py`, about two and a
+half minutes on CPU, or `--fast` for the three that need no display. They are
+standalone scripts, not pytest; `tests/README.md` says why. Add to them when you
+add behaviour.
+
+For anything they do not cover yet, verify headlessly like this.
 
 ### Core logic — no display needed
 
@@ -402,12 +406,13 @@ reading one run sees it too.
 
 Honest list, roughly by value:
 
-1. **No committed test suite.** The verification scripts used during
-   development lived in a temp directory and are gone. A `tests/` folder with
-   the core, GUI-construction, end-to-end training, k-fold and three-workspace
-   checks is the single highest-value addition to this repo. The autoencoder
-   work re-created five such scripts (core, readout guards, offscreen GUI,
-   visual rendering, cross-workspace regression) and lost them the same way.
+1. **Test coverage is autoencoder-heavy.** `tests/` exists now (six suites, see
+   `tests/README.md`), but four of the six are about the autoencoder. The dense
+   and convolutional workspaces get one shared regression suite that only proves
+   they still train. Nothing covers k-fold cross-validation, the preprocessing
+   leak it was written to fix, dataset loading from CSV/Excel, or the ResNet50
+   transfer path — that last one needs a 98 MB download, so it may be better as
+   an opt-in suite than a default one.
 2. **No decision-boundary plot** for the 2D datasets (two moons, circles).
    It would make the "you need hidden layers" lesson visual instead of numeric.
 3. **No gradient-boosting baseline** next to the dense network. Measurements

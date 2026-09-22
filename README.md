@@ -488,6 +488,7 @@ main.py                        entry point, quiets TensorFlow before any import
 manual.html                    illustrated manual for students (Spanish)
 AGENTS.md                      brief for AI agents working on this code
 requirements.txt               pinned minimums
+tests/                         six runnable suites - see tests/README.md
 nnstudio/
   core/                        no Qt in here - pure domain logic
     dataset.py                 loading, task inference, encoding, splitting
@@ -553,9 +554,16 @@ Read [`AGENTS.md`](AGENTS.md) first. It lists the invariants that must not
 break — most of them exist because a convenient shortcut would have made the app
 report a flattering number or teach a wrong lesson.
 
-There is no committed test suite yet; `AGENTS.md` documents how to verify a
-change headlessly in the meantime, and adding a `tests/` folder is the single
-most valuable contribution this repo could take.
+Run the suites before and after your change:
+
+```bash
+python tests/run_all.py
+```
+
+About two and a half minutes on CPU; `--fast` skips the three that open a Qt
+application. They train real networks and click real buttons, so they read as
+transcripts rather than as assertions — [`tests/README.md`](tests/README.md)
+explains why, and what they deliberately refuse to assert.
 
 Every number quoted in this README and in the manual was measured in this app,
 not copied from a paper. If you change a default or touch the model code,

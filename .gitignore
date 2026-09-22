@@ -237,3 +237,6 @@ cifar-10-python.tar.gz
 
 # CodeGraph index - per checkout, never shared between clones
 .codegraph/
+
+# Screenshots and generated fixtures from the test suites
+tests/_output/
