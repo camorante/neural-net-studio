@@ -67,23 +67,24 @@ The two halves meet in exactly one place: `ui/workers.py`, which wraps a plain
 | You are adding… | It belongs in |
 |---|---|
 | A dataset source, encoding or split rule | `core/dataset.py` (tabular) or `core/vision.py` (images) |
-| A layer type, activation or output head | `core/model_builder.py` (dense), `core/resnet.py` (conv), `core/autoencoder.py` (AE) or `core/sequences.py` (RNN) |
-| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py`, `core/autoencoder_trainer.py`, `core/sequence_trainer.py` |
-| A control the user touches | the matching stage panel in `ui/`, `ui/vision/`, `ui/autoencoder/` or `ui/sequences/` |
+| A layer type, activation or output head | `core/model_builder.py` (dense), `core/resnet.py` (conv), `core/autoencoder.py` (AE), `core/sequences.py` (RNN) or `core/transformer.py` (attention) |
+| A new kind of training run | `core/trainer.py`, `core/crossval.py`, `core/vision_trainer.py`, `core/autoencoder_trainer.py`, `core/sequence_trainer.py`, `core/transformer_trainer.py` |
+| A control the user touches | the matching stage panel in `ui/`, `ui/vision/`, `ui/autoencoder/`, `ui/sequences/` or `ui/transformer/` |
 | An image source shared by both image workspaces | `ui/image_source.py` |
-| Orchestration between stages | `ui/dense_workspace.py`, `ui/vision_workspace.py`, `ui/autoencoder_workspace.py` or `ui/sequence_workspace.py` |
+| Orchestration between stages | `ui/dense_workspace.py`, `ui/vision_workspace.py`, `ui/autoencoder_workspace.py`, `ui/sequence_workspace.py` or `ui/transformer_workspace.py` |
 | A background job | a `QThread` in `ui/workers.py` — never inline |
-| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/autoencoder_canvas.py`, `ui/sequence_canvas.py`, `ui/image_grid.py`, `ui/pair_grid.py`, `ui/series_plot.py`, `ui/plots.py` |
+| A drawing | `ui/network_canvas.py`, `ui/resnet_canvas.py`, `ui/autoencoder_canvas.py`, `ui/sequence_canvas.py`, `ui/transformer_canvas.py`, `ui/attention_map.py`, `ui/image_grid.py`, `ui/pair_grid.py`, `ui/series_plot.py`, `ui/plots.py` |
 | A colour or a widget style | `ui/theme.py` only. No inline stylesheets in panels. |
 
-The four workspaces are deliberately independent. `DenseWorkspace`,
-`VisionWorkspace`, `AutoencoderWorkspace` and `SequenceWorkspace` share the
-theme, the plotting widgets and — between the two image workspaces —
-`ui/image_source.py`, and nothing else. No shared model, no shared dataset, no
-shared worker, no workspace importing from another workspace's panel folder. A
-convolutional network is not a later stage of a dense one, an autoencoder is not
-a later stage of either, and a recurrent network answers a question none of them
-ask. Keep it that way.
+The five workspaces are deliberately independent. `DenseWorkspace`,
+`VisionWorkspace`, `AutoencoderWorkspace`, `SequenceWorkspace` and
+`TransformerWorkspace` share the theme, the plotting widgets and — between the
+two image workspaces — `ui/image_source.py`, and nothing else. No shared model,
+no shared dataset, no shared worker, no workspace importing from another
+workspace's panel folder. A convolutional network is not a later stage of a
+dense one, an autoencoder is not a later stage of either, a recurrent network
+answers a question none of them ask, and a transformer replaces recurrence with
+attention and has to be handed position explicitly. Keep it that way.
 
 `ui/image_source.py` is the one piece of genuinely shared stage-1 machinery.
 It lives at the top of `ui/` rather than inside `ui/vision/` precisely so that
@@ -98,7 +99,7 @@ kind of network will consume the images.
 ## Invariants — do not break these
 
 Each of these was either a bug that shipped, or a shortcut that would have
-taught something false. There are sixteen.
+taught something false. There are eighteen.
 
 ### 1. Preprocessing is fit on training rows only
 
@@ -293,12 +294,51 @@ optimal there, so "train for longer" is the wrong advice and `format_sweep()`
 special-cases it. A model that appears to beat persistence on a random walk
 found noise in the validation split, and the readout says so.
 
+
+### 17. An attention map is never shown as an explanation until it has been tested
+
+Every `TransformerRun` ends with `faithfulness()`: the token the map weighed
+most is replaced with a different in-vocabulary token, and so is a random other
+position as a control. Both edits are the same size, so the only difference is
+*which* position was touched. `verdict()` then classifies the map:
+
+| Verdict | Condition | Measured example |
+|---|---|---|
+| `faithful` | attended drop >= 0.20 and >= 3x the control | `match`: -0.941 vs -0.061 |
+| `decorative` | above the floor, but the attended drop is no larger | `first` without positions: -0.003 vs -0.025 |
+| `distributed` | solved (>= 0.90) and no single erasure hurts | `majority`: 0.000 vs 0.000 |
+| `moot` | not above the majority class | a 1-epoch run |
+
+Do not show a heatmap on the Inspect tab without its verdict above it, and do
+not word any hint as "the model looked here because". The decorative case is
+the one this invariant exists for: without positional encoding the `match` map
+has sharpness 0.35 — *more* focused-looking than the correct, flat map on
+`majority` — while the model fails and erasing its attended token changes
+nothing.
+
+`faithfulness()` must test the **same block the reader is looking at**. Its
+first version tested block 1 by default; on the two-block `match` model block 1
+is near noise and block 2 points at the right column 93% of the time, so the
+test was measuring the wrong map. It now defaults to the last block and the
+Inspect tab opens on that block.
+
+### 18. The positional switch is an ablation, not a tuning knob
+
+Self-attention without positional encoding is permutation-invariant, so a model
+with `positional=False` cannot perceive order at all — not "less well", not at
+all. `PositionProbeRun` trains both arms from `ARM_SEED` so the gap is exactly
+what position was worth. The readout says a positionless model on `first` or
+`match` is guessing the commonest token in the sequence, and that claim is
+measured, not reasoned: that guess is right 0.278 of the time on `first` and
+0.297 on `match`, against model accuracies of 0.246 and 0.254. Do not replace
+it with "the model is weaker without positions".
+
 ---
 
 ## How to verify a change
 
-Start with the committed suites — `python tests/run_all.py`, about two and a
-half minutes on CPU, or `--fast` for the three that need no display. They are
+Start with the committed suites — `python tests/run_all.py`, about seven and a
+half minutes on CPU, or `--fast` for the five that need no display. They are
 standalone scripts, not pytest; `tests/README.md` says why. Add to them when you
 add behaviour.
 
@@ -337,7 +377,7 @@ timeout as a safety net.
 
 Render a frame with `QPixmap(win.size()); win.render(pix); pix.save(path)`.
 
-### A shell caveat that has cost time three times
+### A shell caveat that has cost time four times
 
 Never write `
 ` inside a Python patch script fed through a bash heredoc. The
@@ -351,7 +391,10 @@ new = '    return "' + NL + '".join(lines)'
 ```
 
 Better still, use the Write or Edit tools for anything containing escapes.
-This has bitten three separate edits in this repository.
+This has bitten four separate edits in this repository. The fourth wrote the
+broken file to disk BEFORE validating it, so `nnstudio/ui/workers.py` was left
+unparseable until it was repaired by hand. If a script must patch a file,
+`ast.parse()` the new text first and write it only if that succeeds.
 
 ### Two measurement caveats
 
@@ -415,6 +458,19 @@ defaults or the model code, re-measure before editing the claims.
 | More ups than downs, same settings | majority 0.447; LSTM 1.000, Dense **0.990 with 866 weights against 4,418** |
 | The same task, timesteps shuffled | 1.000 -> **0.990** — order carried nothing at all |
 | Sequence cost on CPU | 4-arm sweep **18s**, 2-arm order probe **12s** at 20 epochs |
+| Transformer default | 2 blocks, 64 wide, 2 heads, 40 epochs, 1600 sequences of 12, vocabulary 8; **52,167** parameters (51,399 without positions) |
+| `first`, 4 seeds | with positions **1.000** every time; without **0.246 +/- 0.014** |
+| `match`, 4 seeds | with positions **1.000** every time; without **0.254 +/- 0.021** |
+| `majority`, 4 seeds | **1.000** with and without positions |
+| "Guess the commonest token", no model | right **0.278** on `first`, **0.297** on `match` — what a positionless model falls back to |
+| `match` with ONE block, 64 wide, 60 epochs, 3 seeds | **0.307 +/- 0.049** — the lookup needs two steps |
+| `match`, 64 wide, 2 or 4 heads, 60 epochs | solved on **6 of 6** seeds either way |
+| `match`, 32 wide, 2 heads | solved on 2 of 4 seeds; the other two sit at **0.70 from epoch 45 to 90** — a plateau, not a shortage |
+| `match`, 32 wide, 4 heads (8 per head) | solved on **0 of 6** seeds |
+| Faithful map, `match` | erasing the attended token **-0.941**, a random one **-0.061** (4 seeds) |
+| Faithful map, `first` | **-1.000** vs **-0.000** — the map points exactly at position 0 |
+| Decorative map, `match` without positions | sharpness **0.35**, erasing the attended token -0.010 vs -0.004 |
+| Transformer cost on CPU | ~20-25s per 40-epoch run; the position probe ~45-53s |
 
 The 50-layer row is the important one, and the diagnostic is **training**
 accuracy: a deep plain stack that cannot fit its own training data is failing
@@ -457,8 +513,9 @@ reading one run sees it too.
 
 Honest list, roughly by value:
 
-1. **Test coverage is lopsided.** `tests/` has eight suites (see
-   `tests/README.md`), but six of them cover the autoencoder and the sequences.
+1. **Test coverage is lopsided.** `tests/` has ten suites (see
+   `tests/README.md`), but eight of them cover the autoencoder, the sequences and
+   the transformer.
    The dense and convolutional workspaces share one regression suite that only
    proves they still train. Nothing covers k-fold cross-validation, the
    preprocessing leak it was written to fix, dataset loading from CSV/Excel, or
@@ -472,8 +529,12 @@ Honest list, roughly by value:
 4. **No feature-map visualisation** for the CNN. Showing what the first
    convolution actually responds to is the most "see how it works" thing still
    missing.
-5. `nnstudio/ui/vision_workspace.py`, `dense_workspace.py` and
-   `autoencoder_workspace.py` share a fair
-   amount of orchestration shape. Extracting a common base is tempting —
-   resist it unless the duplication actually hurts, because the independence of
-   the three paths is the point.
+5. The five `*_workspace.py` files share a fair amount of orchestration shape
+   — the dataset worker, the train worker, `_start` and `_cleanup_*`.
+   Extracting a common base is tempting; resist it unless the duplication
+   actually hurts, because the independence of the five paths is the point.
+6. **Two training panels are wider than the column offscreen.** The sequence
+   and transformer panels' metric captions ("Validation", "Val accuracy") make
+   them ask for 520-544px against a 518px column, so offscreen shows a
+   horizontal scrollbar. Offscreen widths are inflated ~2x, so this is probably
+   fine on a real screen — but it has not been checked on one.

@@ -23,10 +23,12 @@ SUITES = (
     ("core", "test_autoencoder_core.py", False, "config, geometry, training, anomalies, sweep"),
     ("judge_core", "test_judge_core.py", False, "load an image from disk and score it"),
     ("seq_core", "test_sequence_core.py", False, "sequence tasks, floors and the order probe"),
+    ("tf_core", "test_transformer_core.py", False, "token tasks, positions and the four map verdicts"),
     ("regression", "test_workspaces_regression.py", True, "dense and convolutional still train"),
     ("judge_gui", "test_judge_gui.py", True, "the judging buttons, end to end"),
     ("gui", "test_autoencoder_gui.py", True, "the whole autoencoder workspace"),
     ("seq_gui", "test_sequence_gui.py", True, "the whole sequence workspace"),
+    ("tf_gui", "test_transformer_gui.py", True, "the whole transformer workspace"),
 )
 
 

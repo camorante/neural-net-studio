@@ -2,10 +2,10 @@
 
 An interactive desktop playground for building, training and inspecting neural
 networks: **fully connected** ones over tabular data, **convolutional** ones over
-images, an **autoencoder** that never sees a label, and **recurrent** ones over
-sequences. Design the architecture with spin boxes and combos, watch the diagram
-redraw as you type, then train on real data and see the learning curves move
-epoch by epoch.
+images, an **autoencoder** that never sees a label, **recurrent** ones over
+sequences, and a tiny **transformer** whose attention map you can test. Design
+the architecture with spin boxes and combos, watch the diagram redraw as you
+type, then train on real data and see the learning curves move epoch by epoch.
 
 Built with **PyQt6** for the interface and **TensorFlow / Keras** for the models.
 No code to write: you move numbers and watch what changes.
@@ -19,7 +19,7 @@ called out where they appear.
 
 | You want to… | Go to |
 |---|---|
-| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 10 chapters, 16 hand-drawn figures |
+| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 11 chapters, 18 hand-drawn figures |
 | Install and run it | [Install](#install) below |
 | Understand the code before changing it | [`AGENTS.md`](AGENTS.md) |
 | Just try something and break it | [Experiments](#experiments-worth-running) |
@@ -82,28 +82,30 @@ before epoch 1 - that is TensorFlow loading. The import is deferred into the
 training thread on purpose, so startup never blocks on it. The log says
 `Loading TensorFlow...` while it happens.
 
-## Four workspaces
+## Five workspaces
 
 The window opens on a mode selector, not a step list:
 
 ```
-[ Dense (NN) ]   [ Convolutional (CNN) ]   [ Autoencoder ]   [ Sequences (RNN) ]
-      |                    |                      |                   |
- 1. Data              1. Images              1. Images            1. Data
- 2. Architecture      2. Architecture        2. Architecture      2. Architecture
- 3. Training          3. Training            3. Training          3. Training
- 4. Predict           4. Predict             4. Reconstruct       4. Inspect
+[ Dense ]      [ CNN ]        [ Autoencoder ]  [ Sequences ]  [ Transformer ]
+    |             |                  |               |               |
+ 1. Data       1. Images        1. Images        1. Data         1. Data
+ 2. Arch.      2. Arch.         2. Arch.         2. Arch.        2. Arch.
+ 3. Training   3. Training      3. Training      3. Training     3. Training
+ 4. Predict    4. Predict       4. Reconstruct   4. Inspect      4. Inspect
 ```
 
 A convolutional network is not a later stage of a dense one; an autoencoder is
 not a later stage of either - it is the only one here that never sees a label;
-and the sequence workspace exists for a question none of the others ask, which
-is whether the order of the data carries anything. Each is a different path,
+the sequence workspace exists for a question none of the others ask, which is
+whether the order of the data carries anything; and the transformer replaces
+recurrence with attention, which has to be handed position explicitly and whose
+map has to be tested before it is believed. Each is a different path,
 with different data, a different architecture vocabulary and different failure
 modes. So each gets its own four stages, its own model, its own workers and its
 own diagrams. Training one leaves the others untouched.
 
-The four share the theme, the plotting widgets, and - between the two image
+The five share the theme, the plotting widgets, and - between the two image
 workspaces - the image-source panel, which knows about `core/vision.py` and
 nothing about any particular kind of network.
 
@@ -452,7 +454,7 @@ seen recurrence win has not learned when to use it — they have learned a refle
 
 ### The order probe
 
-`Does order matter? (shuffle probe)` trains the same model twice: once on the
+`Does order matter?` trains the same model twice: once on the
 real data, once with every sequence's timesteps permuted independently. The
 values and their counts survive; only the arrangement is destroyed. The gap
 between the two runs *is* the part of the answer that lived in the order, and it
@@ -469,6 +471,47 @@ the two disagree about which direction is good — so every readout reads
 persistence beside the model, because a prediction plotted alone against the
 truth flatters itself: a curve that merely repeats the previous value tracks the
 target almost perfectly by eye.
+
+
+## The transformer workspace
+
+A tiny transformer - two blocks, 64 wide, about 52,000 weights - over three
+synthetic token tasks, with its attention map drawn for any validation
+sequence. It is built around two measurements, because the obvious version of
+an attention demo teaches two false things.
+
+**Position has to be given, and the app lets you take it away.** Self-attention
+on its own is permutation-invariant: shuffle the tokens and it computes the same
+thing. `Does position matter?` trains the same model twice from the same
+weights, with and without positional encoding:
+
+| Task | With positions | Without | |
+|---|---|---|---|
+| First token | 1.000 | 0.246 | "first" does not exist without positions |
+| After the cue | 1.000 | 0.254 | neither does "after" |
+| Most common token | 1.000 | 1.000 | counting never needed order |
+
+Without positions the model falls back to guessing the commonest token in the
+sequence, and that is measured rather than asserted: the guess alone is right
+0.278 and 0.297 of the time on the first two tasks.
+
+**An attention map is not an explanation until it has been tested.** Every run
+ends with an erasure test: replace the token the map weighed most, then a
+random other token as a control, and compare what each did to accuracy. The
+Inspect tab puts the verdict *above* the heatmap:
+
+- **Faithful** - erasing the attended token cost 0.94, the control 0.06
+- **Decoration** - the map points somewhere, but erasing it hurts no more than
+  erasing anything else
+- **No single token matters** - the model is right and the flat map is the
+  honest picture of that
+- **No conclusion** - the model has not learned, so its map describes nothing
+
+The decorative case turns up on its own. Without positions, the map on the cue
+task *looks* more focused than the correct flat map on the counting task - while
+the model fails and erasing the token it "attended to" changes nothing. After
+the position probe you can switch the Inspect tab to the positionless arm and
+see it for yourself.
 
 
 ## Troubleshooting
@@ -526,7 +569,7 @@ main.py                        entry point, quiets TensorFlow before any import
 manual.html                    illustrated manual for students (Spanish)
 AGENTS.md                      brief for AI agents working on this code
 requirements.txt               pinned minimums
-tests/                         eight runnable suites - see tests/README.md
+tests/                         ten runnable suites - see tests/README.md
 nnstudio/
   core/                        no Qt in here - pure domain logic
     dataset.py                 loading, task inference, encoding, splitting
@@ -539,6 +582,8 @@ nnstudio/
     autoencoder.py             encoder/decoder pair, anomaly split, error scoring
     sequences.py               sequence tasks, recurrent models, the give-up floors
     sequence_trainer.py        one run, the architecture sweep, the order probe
+    transformer.py             token tasks, a tiny transformer, the attention map
+    transformer_trainer.py     one run, the position probe, the faithfulness verdict
     autoencoder_trainer.py     unsupervised runs, the latent sweep, the readouts
   ui/
     main_window.py             thin shell: the three workspace tabs
@@ -580,7 +625,7 @@ plain run object in a `QThread` and turns its callbacks into signals.
 That is why training never freezes the window, and why the interesting logic can
 be checked without opening one.
 
-The four workspaces are independent on purpose. They share the theme, the
+The five workspaces are independent on purpose. They share the theme, the
 plotting widgets, and - between the two image workspaces - the image-source
 panel, and nothing else: no shared dataset, no shared model, no shared worker.
 Training in one leaves the others untouched.

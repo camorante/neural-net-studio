@@ -1,9 +1,9 @@
-"""Sequence stage 3: run controls, live metrics and the log.
+"""Transformer stage 3: run controls, live metrics and the log.
 
-Three buttons, and the third is the important one. Train answers "how well did
-it do"; Compare architectures answers "which layer suits this"; the Order probe
-answers "did this ever need a sequence model at all" - and until that one is
-answered, the other two are decorating a question nobody checked.
+Every run ends with the attention map being tested, not just drawn, so the log
+of an ordinary Train already carries the faithfulness verdict. The second button
+is the position probe - the transformer's version of asking whether order
+mattered, answered by removing the one thing that lets attention see it.
 """
 from __future__ import annotations
 
@@ -23,22 +23,20 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from ...core.transformer_trainer import DEFAULT_EPOCHS
 from ..widgets import hint, scrollable
 
 
-class SequenceTrainingPanel(QWidget):
-    """Run controls for the sequence workspace."""
+class TransformerTrainingPanel(QWidget):
+    """Run controls for the transformer workspace."""
 
     train_requested = pyqtSignal()
-    sweep_requested = pyqtSignal()
     probe_requested = pyqtSignal()
     stop_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._baseline = float("nan")
-        self._lower_is_better = True
-        self._metric = "mse"
 
         content = QWidget()
         inner = QVBoxLayout(content)
@@ -52,16 +50,13 @@ class SequenceTrainingPanel(QWidget):
         root.setContentsMargins(0, 0, 0, 0)
         root.addWidget(scrollable(content))
 
-    # ------------------------------------------------------------------- build
-
     def _build_hyper_group(self) -> QGroupBox:
         group = QGroupBox("Hyperparameters")
         grid = QGridLayout(group)
-
         grid.addWidget(QLabel("Epochs:"), 0, 0)
         self.epochs_spin = QSpinBox()
         self.epochs_spin.setRange(1, 500)
-        self.epochs_spin.setValue(20)
+        self.epochs_spin.setValue(DEFAULT_EPOCHS)
         grid.addWidget(self.epochs_spin, 0, 1)
 
         grid.addWidget(QLabel("Batch size:"), 1, 0)
@@ -72,13 +67,12 @@ class SequenceTrainingPanel(QWidget):
 
         self.early_check = QCheckBox("Early stopping (val loss)")
         grid.addWidget(self.early_check, 2, 0, 1, 2)
-
         grid.addWidget(
             hint(
-                "These tasks are small: 20 epochs is enough for every "
-                "architecture to separate on the ones that can be learned at "
-                "all. If nothing has moved by then, the problem is the task, "
-                "not the patience."
+                f"At the default size all three tasks are solved by about "
+                f"{DEFAULT_EPOCHS} epochs whenever they can be solved at all. "
+                "A model stuck below that is usually on a plateau, not short of "
+                "time - more epochs did not move it."
             ),
             3, 0, 1, 2,
         )
@@ -90,39 +84,28 @@ class SequenceTrainingPanel(QWidget):
         layout = QVBoxLayout(group)
         layout.setSpacing(8)
 
+        row = QHBoxLayout()
         self.train_button = QPushButton("Train")
         self.train_button.setObjectName("Primary")
         self.train_button.setMinimumHeight(32)
         self.train_button.clicked.connect(self.train_requested.emit)
-        layout.addWidget(self.train_button)
-
-        row = QHBoxLayout()
-        self.sweep_button = QPushButton("Compare architectures")
-        self.sweep_button.setMinimumHeight(30)
-        self.sweep_button.setToolTip(
-            "Trains LSTM, GRU, Conv1D and a plain Dense net on the same windows "
-            "from the same initial weights."
-        )
-        self.sweep_button.clicked.connect(self.sweep_requested.emit)
-        row.addWidget(self.sweep_button, 2)
+        row.addWidget(self.train_button, 2)
 
         self.stop_button = QPushButton("Stop")
         self.stop_button.setObjectName("Danger")
-        self.stop_button.setMinimumHeight(30)
+        self.stop_button.setMinimumHeight(32)
         self.stop_button.setEnabled(False)
         self.stop_button.clicked.connect(self.stop_requested.emit)
         row.addWidget(self.stop_button, 1)
         layout.addLayout(row)
 
-        # Kept short on purpose: a button's minimum width is its text, and the
-        # longer "(shuffle probe)" version was the one widget pushing this
-        # column wider than the autoencoder's. The detail lives in the tooltip.
-        self.probe_button = QPushButton("Does order matter?")
+        # Short for the same reason as the sequence workspace's probe button:
+        # its text is its minimum width. The detail lives in the tooltip.
+        self.probe_button = QPushButton("Does position matter?")
         self.probe_button.setMinimumHeight(30)
         self.probe_button.setToolTip(
-            "Trains the same model twice - once on the real data, once with "
-            "every sequence's timesteps permuted. If the scores match, order "
-            "carried nothing and a recurrent layer is wasted here."
+            "Trains the same transformer twice from the same weights - once "
+            "with positional encoding, once without."
         )
         self.probe_button.clicked.connect(self.probe_requested.emit)
         layout.addWidget(self.probe_button)
@@ -137,7 +120,7 @@ class SequenceTrainingPanel(QWidget):
         self.floor_label = QLabel("-")
         self.versus_label = QLabel("-")
         for column, (caption, widget) in enumerate(
-            (("Epoch", self.epoch_label), ("Validation", self.score_label),
+            (("Epoch", self.epoch_label), ("Val accuracy", self.score_label),
              ("Giving up", self.floor_label), ("vs giving up", self.versus_label))
         ):
             small = QLabel(caption)
@@ -173,33 +156,24 @@ class SequenceTrainingPanel(QWidget):
         self.log.clear()
 
     def set_running(self, running: bool) -> None:
-        for widget in (self.train_button, self.sweep_button, self.probe_button,
-                       self.epochs_spin, self.batch_spin, self.early_check):
+        for widget in (self.train_button, self.probe_button, self.epochs_spin,
+                       self.batch_spin, self.early_check):
             widget.setEnabled(not running)
         self.stop_button.setEnabled(running)
         if running:
             self.progress.setValue(0)
 
-    def set_baseline(self, value: float, metric: str, lower: bool,
-                     explain: str = "") -> None:
-        """The score for not training at all, shown as a number of its own."""
+    def set_baseline(self, value: float, explain: str = "") -> None:
         self._baseline = float(value)
-        self._metric = metric
-        self._lower_is_better = bool(lower)
         if value != value:
             self.floor_label.setText("-")
             self.baseline_label.setText("")
             return
-        self.floor_label.setText(f"{value:.5f}")
+        self.floor_label.setText(f"{value:.3f}")
         self.baseline_label.setText(explain)
 
-    def apply_preset(self, epochs: int, batch: int) -> None:
-        self.epochs_spin.setValue(int(epochs))
-        self.batch_spin.setValue(int(batch))
-
     def reset_metrics(self) -> None:
-        # floor_label is left alone on purpose: it describes the dataset, not
-        # the run, and the workspace computes it before training starts.
+        # floor_label describes the dataset, not the run, so it survives.
         for label in (self.epoch_label, self.score_label, self.versus_label):
             label.setText("-")
         self.progress.setValue(0)
@@ -207,32 +181,11 @@ class SequenceTrainingPanel(QWidget):
     def show_progress(self, done: int, total: int, epoch: int, logs: dict,
                       label: str) -> None:
         self.progress.setValue(int(done / max(total, 1) * 100))
-        prefix = f"{label} " if label else ""
-        self.epoch_label.setText(f"{prefix}{epoch}")
-
-        key = "val_loss" if self._lower_is_better else "val_accuracy"
-        score = logs.get(key, logs.get(key.replace("val_", "")))
+        self.epoch_label.setText(f"{label} {epoch}".strip())
+        score = logs.get("val_accuracy", logs.get("accuracy"))
         if score is None:
-            self.score_label.setText("-")
-            self.versus_label.setText("-")
             return
-
-        self.score_label.setText(f"{score:.5f}")
-        if self._baseline != self._baseline:
-            self.versus_label.setText("-")
-            return
-
-        if self._lower_is_better:
-            if score <= 0:
-                self.versus_label.setText("-")
-                return
-            factor = self._baseline / score
-            self.versus_label.setText(
-                f"{factor:.1f}x better" if factor >= 1.0
-                else f"{1 / factor:.1f}x WORSE"
-            )
-        else:
+        self.score_label.setText(f"{score:.3f}")
+        if self._baseline == self._baseline:
             points = 100 * (score - self._baseline)
-            self.versus_label.setText(
-                f"+{points:.1f} pts" if points >= 0 else f"{points:.1f} pts"
-            )
+            self.versus_label.setText(f"{points:+.1f} pts")

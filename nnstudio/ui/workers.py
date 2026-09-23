@@ -18,6 +18,11 @@ from ..core.sequence_trainer import (
     SequenceRun,
 )
 from ..core.trainer import TrainingRequest, TrainingRun
+from ..core.transformer_trainer import (
+    PositionProbeRun,
+    TransformerRequest,
+    TransformerRun,
+)
 from ..core.vision import BuildCancelled, ImageBundle
 from ..core.vision_trainer import SkipComparisonRun, VisionRequest, VisionRun
 
@@ -290,6 +295,60 @@ class OrderProbeWorker(QThread):
     def __init__(self, request: SequenceRequest, parent=None):
         super().__init__(parent)
         self._run = OrderProbeRun(
+            request,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+            on_arm_done=lambda label, outcome: self.arm_done.emit(label, outcome),
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class TransformerWorker(QThread):
+    """Trains one transformer off the GUI thread, then tests its attention map."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: TransformerRequest, parent=None):
+        super().__init__(parent)
+        self._run = TransformerRun(
+            request,
+            on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
+            on_message=self.message.emit,
+        )
+
+    def stop(self) -> None:
+        self._run.stop()
+
+    def run(self) -> None:  # noqa: D102 - QThread entry point
+        try:
+            self.succeeded.emit(self._run.run())
+        except Exception as exc:  # noqa: BLE001 - reported to the user verbatim
+            self.failed.emit(f"{exc}\n\n{traceback.format_exc()}")
+
+
+class PositionProbeWorker(QThread):
+    """Trains the same transformer with and without positional encoding."""
+
+    epoch_done = pyqtSignal(int, dict, str)
+    arm_done = pyqtSignal(str, dict)
+    message = pyqtSignal(str)
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, request: TransformerRequest, parent=None):
+        super().__init__(parent)
+        self._run = PositionProbeRun(
             request,
             on_epoch=lambda epoch, logs, label: self.epoch_done.emit(epoch, logs, label),
             on_message=self.message.emit,

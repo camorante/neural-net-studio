@@ -1,6 +1,6 @@
 # Tests
 
-Eight suites. Run them all:
+Ten suites. Run them all:
 
 ```bash
 python tests/run_all.py
@@ -21,12 +21,14 @@ Or one by name: `python tests/run_all.py judge_gui`, or just
 | `test_autoencoder_core.py` | ~17s | Validation, geometry, both variants, a real run, anomalies, the sweep |
 | `test_judge_core.py` | ~22s | `load_single_image` + `judge_image` + `format_judgement` |
 | `test_sequence_core.py` | ~27s | The four sequence tasks, their floors, and the order probe |
+| `test_transformer_core.py` | ~84s | The token tasks, the position probe, and all four map verdicts |
 | `test_workspaces_regression.py` | ~15s | Dense and convolutional still train after shared-code changes |
 | `test_judge_gui.py` | ~25s | The Choose/Judge buttons, end to end |
 | `test_autoencoder_gui.py` | ~38s | The whole autoencoder workspace, through its real widgets |
 | `test_sequence_gui.py` | ~46s | The whole sequence workspace, including both probe verdicts |
+| `test_transformer_gui.py` | ~132s | The whole transformer workspace, down to switching probe arms |
 
-About three and a half minutes for the lot, on CPU.
+About seven and a half minutes for the lot, on CPU (437s measured).
 
 ## Why these are scripts and not pytest
 
@@ -53,6 +55,11 @@ reaches (`ORDER MATTERS HERE` on the spike task, `ORDER CARRIED NOTHING` on the
 counting one) and that a random walk is never beaten, because those survive a
 reseed. They never assert a particular accuracy.
 
+The transformer suites assert the map's *verdict* — faithful, decorative,
+distributed, moot — each on a model that genuinely earns it, and that the
+most-attended column lands on the answer for most sequences rather than for
+any particular one.
+
 ## Conventions
 
 - `_bootstrap.py` is the only shared module: import path, quiet TensorFlow, and
@@ -63,3 +70,5 @@ reseed. They never assert a particular accuracy.
   which is gitignored.
 - Offscreen Qt has no Segoe UI, so **width** measurements come out roughly twice
   the real ones. Only **height** is trustworthy there.
+- A widget on a tab that is not in front reports `isVisible() == False`, which
+  makes any `assert not w.isVisible()` pass blind. Use `isVisibleTo(panel)`.

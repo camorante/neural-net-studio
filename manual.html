@@ -423,7 +423,7 @@
     <p class="toc-title">Contenido</p>
     <ol>
       <li><a href="#empezar"><span class="num">1</span>Antes de empezar</a></li>
-      <li><a href="#dos-mundos"><span class="num">2</span>Los cuatro mundos</a></li>
+      <li><a href="#dos-mundos"><span class="num">2</span>Los cinco mundos</a></li>
       <li>
         <a href="#conceptos"><span class="num">3</span>Conceptos básicos</a>
         <ol class="sub">
@@ -484,8 +484,19 @@
           <li><a href="#seq-etapas">Las cuatro etapas</a></li>
         </ul>
       </li>
-      <li><a href="#experimentos"><span class="num">9</span>Experimentos</a></li>
-      <li><a href="#glosario"><span class="num">10</span>Glosario</a></li>
+      <li>
+        <a href="#transformer"><span class="num">9</span>Transformer</a>
+        <ul>
+          <li><a href="#tf-atencion">Qué es la atención</a></li>
+          <li><a href="#tf-posicion">Por qué necesita posición</a></li>
+          <li><a href="#tf-mapa">Cómo leer el mapa</a></li>
+          <li><a href="#tf-fiel">El mapa no es una explicación</a></li>
+          <li><a href="#tf-dos-pasos">Dos bloques y el ancho por cabeza</a></li>
+          <li><a href="#tf-etapas">Las cuatro etapas</a></li>
+        </ul>
+      </li>
+      <li><a href="#experimentos"><span class="num">10</span>Experimentos</a></li>
+      <li><a href="#glosario"><span class="num">11</span>Glosario</a></li>
     </ol>
   </nav>
 
@@ -552,10 +563,10 @@ pip install -r requirements.txt</pre>
 
     <!-- ============================================================ 2 -->
     <section id="dos-mundos">
-      <h2><span class="chapter">02</span>Los cuatro mundos: NN, CNN, Autoencoder y Secuencias</h2>
+      <h2><span class="chapter">02</span>Los cinco mundos</h2>
       <p class="section-lede">
-        Al abrir la app ves cuatro pestañas grandes arriba. No son cuatro pasos.
-        Son cuatro caminos distintos, y elegís uno.
+        Al abrir la app ves cinco pestañas grandes arriba. No son cinco pasos.
+        Son cinco caminos distintos, y elegís uno.
       </p>
 
       <div class="pill-row">
@@ -563,6 +574,7 @@ pip install -r requirements.txt</pre>
         <span class="pill on">Convolutional (CNN)</span>
         <span class="pill on">Autoencoder (no labels)</span>
         <span class="pill on">Sequences (RNN)</span>
+        <span class="pill on">Transformer (attention)</span>
       </div>
 
       <p>
@@ -723,6 +735,17 @@ pip install -r requirements.txt</pre>
           una serie de precios, una frase, mediciones en el tiempo. Pero ojo, porque esa
           es exactamente la suposición que el <a href="#secuencias">capítulo 8</a> te va
           a enseñar a <em>medir</em> en lugar de dar por sentada.
+        </p>
+      </div>
+
+      <div class="card">
+        <h4>Usá Transformer si…</h4>
+        <p>
+          querés ver el mecanismo que está adentro de los modelos de lenguaje actuales:
+          <strong>la atención</strong>. Cada posición mira a todas las demás y decide
+          cuánto le importa cada una. La app te dibuja esas decisiones como un mapa —
+          y el <a href="#transformer">capítulo 9</a> te enseña a no creerle sin
+          probarlo.
         </p>
       </div>
     </section>
@@ -2375,7 +2398,7 @@ pip install -r requirements.txt</pre>
       <h3 id="seq-sonda">La sonda de barajado</h3>
       <p>
         Acá está el botón que hace que este workspace valga la pena:
-        <span class="ui">Does order matter? (shuffle probe)</span>. Entrena el mismo
+        <span class="ui">Does order matter?</span>. Entrena el mismo
         modelo <strong>dos veces</strong>. La segunda vez, a cada secuencia le permuta
         los pasos — cada una con su propia permutación, para que no haya un reordenamiento
         consistente que se pueda aprender.
@@ -2526,9 +2549,262 @@ pip install -r requirements.txt</pre>
       </div>
     </section>
 
-    <!-- ============================================================ 9 -->
+        <!-- ============================================================ 9 -->
+    <section id="transformer">
+      <h2><span class="chapter">09</span>Transformer: la atención, y cuándo creerle</h2>
+      <p class="section-lede">
+        El mecanismo de los modelos de lenguaje, en miniatura. Y una lección que casi
+        nadie enseña junto con él: un mapa de atención lindo no es una explicación.
+      </p>
+
+      <h3 id="tf-atencion">Qué es la atención</h3>
+      <p>
+        Una red recurrente lee la secuencia de a un paso, arrastrando una memoria. Un
+        transformer no. Mira <strong>todo a la vez</strong>: cada posición le pregunta a
+        todas las demás «¿cuánto me importás?», y arma su resultado como una mezcla
+        ponderada de lo que encontró. Esos pesos suman 1 — son un reparto de atención.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 250" role="img" aria-label="Arriba, una fila de ocho tokens. Desde la posicion seis salen flechas hacia todas las demas; la flecha hacia la posicion dos es muy gruesa y las otras son finas. Los pesos suman uno. Abajo, los mismos tokens barajados sin codificacion posicional producen exactamente el mismo reparto, porque la atencion por si sola no sabe de orden">
+          <defs>
+            <marker id="arTf1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <text x="0" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">LA POSICION 6 REPARTE SU ATENCION</text>
+
+          <g font-family="monospace" font-size="13" text-anchor="middle">
+            <rect x="20" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="48" y="140" fill="var(--data)">3</text>
+            <rect x="102" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="130" y="140" fill="var(--data)">5</text>
+            <rect x="184" y="118" width="56" height="34" rx="5" fill="var(--good-bg)" stroke="var(--good)" stroke-width="2"></rect><text x="212" y="140" fill="var(--good)">cue</text>
+            <rect x="266" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="294" y="140" fill="var(--data)">2</text>
+            <rect x="348" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="376" y="140" fill="var(--data)">7</text>
+            <rect x="430" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="458" y="140" fill="var(--data)">4</text>
+            <rect x="512" y="118" width="56" height="34" rx="5" fill="var(--out-bg)" stroke="var(--out)" stroke-width="2"></rect><text x="540" y="140" fill="var(--out)">6</text>
+            <rect x="594" y="118" width="56" height="34" rx="5" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.2"></rect><text x="622" y="140" fill="var(--data)">1</text>
+          </g>
+
+          <g fill="none" stroke="var(--out)" stroke-linecap="round">
+            <path d="M 540,116 C 520,40 250,40 216,112" stroke-width="6" marker-end="url(#arTf1)"></path>
+            <path d="M 540,116 C 530,80 470,80 460,114" stroke-width="1.2" opacity="0.6"></path>
+            <path d="M 540,116 C 530,70 390,70 378,114" stroke-width="1.2" opacity="0.6"></path>
+            <path d="M 540,116 C 530,62 310,62 296,114" stroke-width="1.2" opacity="0.6"></path>
+            <path d="M 540,116 C 530,90 630,90 622,114" stroke-width="1.2" opacity="0.6"></path>
+          </g>
+          <text x="330" y="36" font-size="12" fill="var(--out)">casi toda su atención va al cue</text>
+          <text x="560" y="84" font-size="11" fill="currentColor" opacity="0.75">el resto, repartido</text>
+
+          <text x="0" y="190" font-size="12" fill="currentColor">Cada fila del mapa es esto: una posición repartiendo 1 entre todas las demás.</text>
+          <text x="0" y="212" font-size="12" fill="currentColor">Y sin codificación posicional, barajar los tokens da <tspan font-weight="600" fill="var(--bad)">exactamente el mismo reparto</tspan>:</text>
+          <text x="0" y="230" font-size="12" fill="currentColor">la atención por sí sola compara contenidos, no lugares.</text>
+        </svg>
+        <figcaption>
+          <b>Atención es mirar a todos a la vez, con distinta intensidad.</b> El grosor de
+          cada flecha es el peso que la posición 6 le da a cada token. Fijate lo que
+          falta en el dibujo: nada dice <em>dónde</em> está cada token. Eso tiene que
+          agregarse aparte, y es la sección que sigue.
+        </figcaption>
+      </figure>
+
+      <h3 id="tf-posicion">Por qué necesita posición</h3>
+      <p>
+        Esto es lo más sorprendente de la atención para quien viene de las redes
+        recurrentes: <strong>no sabe de orden</strong>. Si barajás los tokens, cada uno
+        sigue encontrando a los mismos vecinos con los mismos pesos. Para ella, una
+        secuencia es un <em>conjunto</em>. Por eso a cada token se le suma un vector
+        que dice «estoy en la posición 3»: la <strong>codificación posicional</strong>.
+      </p>
+      <p>
+        La app te deja apagarla, y ahí se ve quién la necesitaba de verdad. Medido en
+        cuatro semillas, con el modelo por defecto:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tarea</th><th>Con posiciones</th><th>Sin posiciones</th><th>Por qué</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">First token</span></td><td>1,000 las 4</td><td>0,246</td><td>«Primero» no existe sin posiciones. Cae a adivinar el token más común, que acierta 0,278 solo porque el primero es uno de los que cuenta.</td></tr>
+            <tr><td><span class="ui">After the cue</span></td><td>1,000 las 4</td><td>0,254</td><td>«El que viene después» tampoco existe. Mismo recurso: el más común acierta 0,297.</td></tr>
+            <tr><td><span class="ui">Most common token</span></td><td>1,000</td><td><strong>1,000</strong></td><td>Contar no necesita orden. Apagar las posiciones no le costó nada.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        El botón <span class="ui">Does position matter?</span> hace esta prueba solo:
+        entrena el mismo modelo dos veces desde los mismos pesos, con y sin posiciones.
+        Es el primo de la sonda de barajado del <a href="#seq-sonda">capítulo 8</a>, pero
+        más limpio: acá no hace falta barajar nada, porque sin posiciones el modelo
+        <em>no puede</em> ver el orden aunque quiera.
+      </p>
+
+      <h3 id="tf-mapa">Cómo leer el mapa</h3>
+      <p>
+        En la pestaña <span class="ui">4. Inspect</span> elegís una secuencia y aparece su
+        mapa. Es una grilla de largo × largo.
+      </p>
+      <ul>
+        <li><strong>Cada fila</strong> es una posición «mirando». <strong>Cada columna</strong>, lo que es mirado. Cuanto más oscuro, más peso.</li>
+        <li>El recuadro <strong>naranja punteado</strong> es la columna que más peso recibió en total.</li>
+        <li>El recuadro <strong>verde</strong> es donde la tarea dice que vive la respuesta: la posición 0 en <span class="ui">First token</span>, la que sigue al cue en <span class="ui">After the cue</span>. En <span class="ui">Most common token</span> no hay, porque la respuesta no vive en ningún lugar en particular.</li>
+      </ul>
+      <p>
+        Cuando naranja y verde coinciden, el mapa por lo menos <em>apunta</em> al lugar
+        correcto. Medido: en la tarea del cue, la columna más atendida cayó sobre la
+        respuesta en 8 de 8 secuencias revisadas. Pero apuntar no es lo mismo que usar.
+      </p>
+
+      <h3 id="tf-fiel">El mapa no es una explicación</h3>
+      <p>
+        Este es el corazón del capítulo. Un mapa de atención se ve como si el modelo te
+        estuviera contando dónde miró para responder. Es tentador leerlo así. Pero los
+        pesos de atención son solo eso — pesos. Nada garantiza que la respuesta haya
+        salido de ahí.
+      </p>
+      <p>
+        Por eso cada entrenamiento termina con una <strong>prueba de borrado</strong>. Se
+        toma el token que el mapa más resaltó y se cambia por otro. Después, como
+        control, se cambia uno <em>cualquiera</em>. Si la respuesta dependía de verdad del
+        token resaltado, borrarlo tiene que doler mucho más que borrar uno al azar.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 300" role="img" aria-label="Dos casos lado a lado. A la izquierda, un modelo con posiciones: su mapa resalta la posicion cero. Borrar ese token baja el acierto de uno a cero; borrar otro lo deja en uno. El mapa es fiel. A la derecha, el mismo modelo sin posiciones: su mapa tambien parece enfocado, pero en una columna equivocada. Borrar ese token deja el acierto en 0,27, igual que antes. El mapa es decoracion">
+          <text x="0" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--good)">CON POSICIONES &#8212; FIEL</text>
+          <text x="376" y="14" font-family="monospace" font-size="12" font-weight="600" fill="var(--bad)">SIN POSICIONES &#8212; DECORACION</text>
+
+          <!-- left map: one bright column at 0 -->
+          <g>
+            <rect x="0" y="30" width="160" height="120" fill="var(--surface-2)"></rect>
+            <rect x="0" y="30" width="20" height="120" fill="var(--accent)"></rect>
+            <rect x="0" y="30" width="20" height="120" fill="none" stroke="var(--good)" stroke-width="2.5"></rect>
+            <rect x="3" y="33" width="14" height="114" fill="none" stroke="var(--out)" stroke-width="1.6" stroke-dasharray="4 3"></rect>
+          </g>
+          <text x="0" y="168" font-size="11" fill="currentColor" opacity="0.75">naranja y verde sobre la misma columna</text>
+
+          <g font-size="12">
+            <text x="180" y="54" fill="currentColor">sin tocar</text>
+            <text x="330" y="54" text-anchor="end" font-family="monospace" fill="currentColor">1,00</text>
+            <text x="180" y="84" fill="currentColor">borro el resaltado</text>
+            <text x="330" y="84" text-anchor="end" font-family="monospace" font-weight="600" fill="var(--bad)">0,00</text>
+            <text x="180" y="114" fill="currentColor">borro otro cualquiera</text>
+            <text x="330" y="114" text-anchor="end" font-family="monospace" fill="currentColor">1,00</text>
+          </g>
+
+          <line x1="358" y1="24" x2="358" y2="290" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+
+          <!-- right map: scattered bright cells, focus at column 2, answer at 0 -->
+          <g>
+            <rect x="376" y="30" width="160" height="120" fill="var(--surface-2)"></rect>
+            <rect x="416" y="30" width="20" height="120" fill="var(--accent)" opacity="0.55"></rect>
+            <rect x="456" y="50" width="20" height="20" fill="var(--accent)"></rect>
+            <rect x="456" y="110" width="20" height="20" fill="var(--accent)"></rect>
+            <rect x="496" y="70" width="20" height="20" fill="var(--accent)" opacity="0.8"></rect>
+            <rect x="376" y="30" width="20" height="120" fill="none" stroke="var(--good)" stroke-width="2.5"></rect>
+            <rect x="419" y="33" width="14" height="114" fill="none" stroke="var(--out)" stroke-width="1.6" stroke-dasharray="4 3"></rect>
+          </g>
+          <text x="376" y="168" font-size="11" fill="currentColor" opacity="0.75">parece enfocado... en el lugar equivocado</text>
+
+          <g font-size="12">
+            <text x="556" y="54" fill="currentColor">sin tocar</text>
+            <text x="710" y="54" text-anchor="end" font-family="monospace" fill="currentColor">0,27</text>
+            <text x="556" y="84" fill="currentColor">borro el resaltado</text>
+            <text x="710" y="84" text-anchor="end" font-family="monospace" font-weight="600" fill="currentColor">0,27</text>
+            <text x="556" y="114" fill="currentColor">borro otro cualquiera</text>
+            <text x="710" y="114" text-anchor="end" font-family="monospace" fill="currentColor">0,25</text>
+          </g>
+
+          <line x1="0" y1="196" x2="720" y2="196" stroke="currentColor" stroke-width="1" opacity="0.18"></line>
+          <text x="0" y="222" font-size="12.5" fill="currentColor">Izquierda: borrar lo que el mapa señala destruye la respuesta. El mapa decía la verdad.</text>
+          <text x="0" y="246" font-size="12.5" fill="currentColor">Derecha: borrarlo no cambia nada. El mapa señalaba algo, pero la respuesta no salía de ahí.</text>
+          <text x="0" y="276" font-size="12.5" font-weight="600" fill="var(--bad)">Y el de la derecha se ve MÁS enfocado que un mapa correcto de la tarea de contar.</text>
+        </svg>
+        <figcaption>
+          <b>Un mapa convincente y uno fiel no son lo mismo.</b> Los dos de arriba parecen
+          decir algo. Solo el de la izquierda aguantó la prueba. Números medidos en la
+          tarea <span class="ui">First token</span>: el de la izquierda con posiciones, el
+          de la derecha sin ellas.
+        </figcaption>
+      </figure>
+
+      <p>La prueba tiene cuatro veredictos posibles, y cada uno lo gana un modelo real:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Veredicto</th><th>Cuándo sale</th><th>Qué significa</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Faithful</strong></td><td>Borrar lo resaltado duele mucho más que el control</td><td>El mapa se ganó que lo leas. Medido: −0,94 contra −0,06 en la tarea del cue.</td></tr>
+            <tr><td><strong>Decoration</strong></td><td>Borrar lo resaltado duele igual que el control</td><td>El mapa apunta, la respuesta no lo sigue. Lo que sea que use el modelo, el mapa no te lo muestra.</td></tr>
+            <tr><td><strong>No single token matters</strong></td><td>El modelo acierta y ningún borrado le cambia nada</td><td>La respuesta está repartida en toda la secuencia. Un mapa <em>plano</em> es la imagen honesta. Uno filoso sería lo sospechoso.</td></tr>
+            <tr><td><strong>No conclusion</strong></td><td>El modelo no le ganó a la clase mayoritaria</td><td>No aprendió nada, así que su mapa no describe nada aprendido.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note-label">Esto no es un detalle de la app</span>
+        <p>
+          Es una discusión real de la investigación: los pesos de atención no son, por
+          sí solos, una explicación de por qué un modelo decidió algo. Cuando veas un
+          mapa de atención en un artículo o una demo, la pregunta correcta no es «¿dónde
+          miró?» sino «¿alguien probó qué pasa si le sacás eso?».
+        </p>
+      </div>
+
+      <h3 id="tf-dos-pasos">Dos bloques y el ancho por cabeza</h3>
+      <p>
+        La tarea <span class="ui">After the cue</span> esconde una lección de
+        arquitectura. Con <strong>un solo bloque</strong> de atención no la resuelve nunca:
+        0,31 de acierto, promedio de tres semillas. Con <strong>dos</strong>, la resuelve.
+        Es una búsqueda en dos pasos — primero cada posición averigua si el cue está
+        justo antes que ella, después se trae el token de ahí — y cada paso necesita su
+        propio bloque. En el mapa se ve: el del bloque 1 es casi ruido, el del bloque 2
+        se mueve con el cue.
+      </p>
+      <p>
+        El ancho también importa, y no del modo obvio. Las cabezas se reparten el ancho:
+        con 64 de ancho y 2 cabezas, cada una tiene 32 números. Medido sobre la misma
+        tarea:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ancho</th><th>Cabezas</th><th>Por cabeza</th><th>Resuelta</th></tr></thead>
+          <tbody>
+            <tr><td>64</td><td>2</td><td>32</td><td><strong>6 de 6 semillas</strong></td></tr>
+            <tr><td>64</td><td>4</td><td>16</td><td>6 de 6</td></tr>
+            <tr><td>32</td><td>2</td><td>16</td><td>2 de 4 — las otras dos se clavan en 0,70 y no salen ni con 90 épocas</td></tr>
+            <tr><td>32</td><td>4</td><td>8</td><td><strong>0 de 6</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <span class="note-label">Mirá la curva de aprendizaje</span>
+        <p>
+          En esta tarea el loss suele quedarse <strong>plano</strong> un buen rato y después
+          desplomarse en pocas épocas. No es que el modelo aprenda de a poquito: el
+          mecanismo de dos pasos no sirve hasta que están las dos partes, y cuando por
+          fin encajan, la respuesta aparece de golpe. Si ves una meseta que no se
+          mueve durante muchas épocas, puede ser eso — o puede ser una de esas semillas
+          que se clavan para siempre. Otra semilla te lo dice.
+        </p>
+      </div>
+
+      <h3 id="tf-etapas">Las cuatro etapas</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Etapa</th><th>Qué hacés ahí</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ui">1. Data</span></td><td>Una de las tres tareas, el largo, el vocabulario. Abajo del combo aparece cómo <em>debería</em> verse el mapa si el modelo lo resuelve como vos. El token 0 queda reservado para el cue.</td></tr>
+            <tr><td><span class="ui">2. Architecture</span></td><td><span class="ui">Positional encoding</span> arriba de todo, sola, porque es el único control que cambia lo que el modelo <em>puede</em> percibir. Abajo, ancho, cabezas, bloques, feed-forward y pooling. <span class="ui">Width per head</span> te muestra cuánto le queda a cada cabeza.</td></tr>
+            <tr><td><span class="ui">3. Training</span></td><td><span class="ui">Train</span> entrena y prueba el mapa. <span class="ui">Does position matter?</span> entrena con y sin posiciones desde los mismos pesos.</td></tr>
+            <tr><td><span class="ui">4. Inspect</span></td><td>Arriba, el veredicto — antes que el mapa, a propósito. Abajo, secuencia, bloque y cabeza. Después de la sonda aparece <span class="ui">Model</span> para elegir el brazo: mirá el mapa del que no tiene posiciones.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10 -->
     <section id="experimentos">
-      <h2><span class="chapter">09</span>Quince experimentos</h2>
+      <h2><span class="chapter">10</span>Dieciocho experimentos</h2>
       <p class="section-lede">
         Acá está lo que más te va a enseñar. Cada uno rompe algo a propósito, porque ver
         fallar una red enseña más que verla funcionar.
@@ -2698,11 +2974,44 @@ pip install -r requirements.txt</pre>
           <dt class="lesson">Aprendiste</dt><dd class="lesson">Que la red densa común es una línea de base mucho más fuerte de lo que casi nadie prueba. Corré la sonda del experimento 14 en esta misma tarea y vas a entender por qué.</dd>
         </dl>
       </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">16</span><h3>Apagale las posiciones</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Transformer · <span class="ui">First token</span>, después <span class="ui">Most common token</span></dd>
+          <dt>Hacé</dt><dd>Con la primera tarea apretá <span class="ui">Does position matter?</span>. Anotá los dos números. Cambiá a la tercera, generá de nuevo y apretá el mismo botón.</dd>
+          <dt>Vas a ver</dt><dd>Primera tarea: 1,000 contra 0,246. Tercera: 1,000 contra 1,000.</dd>
+          <dt>Por qué</dt><dd>Sin posiciones la atención ve un conjunto, no una fila. «Primero» deja de existir; «el más común», no.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Que la atención no sabe de orden por sí sola. Hay que dárselo, y en qué tareas hace falta se puede medir.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">17</span><h3>Un mapa que miente con cara de verdad</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Transformer · <span class="ui">First token</span></dd>
+          <dt>Hacé</dt><dd>Corré la sonda del experimento 16. En <span class="ui">4. Inspect</span>, elegí <span class="ui">Model: no positions</span> y apretá <span class="ui">Next sequence</span> varias veces.</dd>
+          <dt>Vas a ver</dt><dd>Un mapa con manchas brillantes que parece decir algo. Arriba, el veredicto: <em>Decoration</em>. El recuadro naranja y el verde no coinciden.</dd>
+          <dt>Por qué</dt><dd>Borrar el token más atendido no cambió el acierto (0,27 antes y después). El mapa señalaba algo que la respuesta no usaba.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">A no leer un mapa de atención como una explicación hasta que alguien lo haya probado.</dd>
+        </dl>
+      </div>
+
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">18</span><h3>Sacale un bloque</h3></div>
+        <dl>
+          <dt>Dónde</dt><dd>Transformer · <span class="ui">After the cue</span></dd>
+          <dt>Hacé</dt><dd>Entrená con los valores por defecto. Después poné <span class="ui">Blocks</span> en 1 y entrená otra vez, aunque sea con 60 épocas.</dd>
+          <dt>Vas a ver</dt><dd>Con dos bloques, 1,000. Con uno, se queda cerca de 0,31.</dd>
+          <dt>Por qué</dt><dd>Encontrar el cue y traer el token de al lado son dos pasos, y cada bloque de atención hace uno.</dd>
+          <dt class="lesson">Aprendiste</dt><dd class="lesson">Que la profundidad de un transformer no es solo «más capacidad»: algunas operaciones necesitan pasos encadenados. Volvé a 2 bloques y mirá el mapa del bloque 1 y del bloque 2 por separado.</dd>
+        </dl>
+      </div>
     </section>
 
-    <!-- ============================================================ 10 -->
+    <!-- ============================================================ 11 -->
     <section id="glosario">
-      <h2><span class="chapter">10</span>Glosario</h2>
+      <h2><span class="chapter">11</span>Glosario</h2>
       <p class="section-lede">Las palabras que más vas a leer, en una línea cada una.</p>
 
       <dl class="glossary">

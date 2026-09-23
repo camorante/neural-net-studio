@@ -65,10 +65,10 @@ def build():
     pump(ws._data_worker, 180_000)
 
 
-print("=== 1. the shell has four workspaces ===")
+print("=== 1. the sequences sit in their own workspace ===")
 titles = [win.workspaces.tabText(i) for i in range(win.workspaces.count())]
 print("  tabs:", titles)
-assert len(titles) == 4 and "Sequences" in titles[3]
+assert "Sequences" in titles[SEQUENCE]
 stages = [ws.tabs.tabText(i) for i in range(ws.tabs.count())]
 print("  stages:", stages)
 assert stages == ["1. Data", "2. Architecture", "3. Training", "4. Inspect"]
