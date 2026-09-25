@@ -28,7 +28,8 @@ Or one by name: `python tests/run_all.py judge_gui`, or just
 | `test_sequence_gui.py` | ~46s | The whole sequence workspace, including both probe verdicts |
 | `test_transformer_gui.py` | ~132s | The whole transformer workspace, down to switching probe arms |
 
-About seven and a half minutes for the lot, on CPU (437s measured).
+Between four and a half and seven and a half minutes for the lot on CPU,
+depending on what else the machine is doing (265s and 437s measured).
 
 ## Why these are scripts and not pytest
 
@@ -68,7 +69,9 @@ any particular one.
   fresh clone can run everything with nothing but the repository.
 - Generated files — screenshots and those drawn images — go to `tests/_output/`,
   which is gitignored.
-- Offscreen Qt has no Segoe UI, so **width** measurements come out roughly twice
-  the real ones. Only **height** is trustworthy there.
+- Offscreen Qt ships with no fonts, and without them **width** measurements
+  come out about 1.8x the real ones. `offscreen()` points `QT_QPA_FONTDIR` at the
+  Windows fonts, which fixes that and makes the screenshots readable. Heights
+  were already right either way.
 - A widget on a tab that is not in front reports `isVisible() == False`, which
   makes any `assert not w.isVisible()` pass blind. Use `isVisibleTo(panel)`.

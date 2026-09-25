@@ -19,7 +19,7 @@ called out where they appear.
 
 | You want to… | Go to |
 |---|---|
-| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 11 chapters, 18 hand-drawn figures |
+| Learn the concepts, in Spanish, with diagrams | [`manual.html`](manual.html) — 12 chapters, 21 hand-drawn figures |
 | Install and run it | [Install](#install) below |
 | Understand the code before changing it | [`AGENTS.md`](AGENTS.md) |
 | Just try something and break it | [Experiments](#experiments-worth-running) |
@@ -474,6 +474,10 @@ target almost perfectly by eye.
 
 
 ## The transformer workspace
+
+New to attention? Chapter 9 of the manual explains it from scratch - one
+sentence, one sum you can do by hand, one five-step recipe - before chapter
+10 starts measuring it.
 
 A tiny transformer - two blocks, 64 wide, about 52,000 weights - over three
 synthetic token tasks, with its attention map drawn for any validation

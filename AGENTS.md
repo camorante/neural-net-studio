@@ -337,8 +337,9 @@ it with "the model is weaker without positions".
 
 ## How to verify a change
 
-Start with the committed suites — `python tests/run_all.py`, about seven and a
-half minutes on CPU, or `--fast` for the five that need no display. They are
+Start with the committed suites — `python tests/run_all.py`, between four and a
+half and seven and a half minutes on CPU depending on load, or `--fast` for the
+five that need no display. They are
 standalone scripts, not pytest; `tests/README.md` says why. Add to them when you
 add behaviour.
 
@@ -398,10 +399,13 @@ unparseable until it was repaired by hand. If a script must patch a file,
 
 ### Two measurement caveats
 
-- **Offscreen has no Segoe UI.** It falls back to a font with much wider
-  metrics, so `minimumSizeHint().width()` readings are inflated roughly 2x.
-  **Height** readings offscreen do match a real screen and are trustworthy.
-  Never chase a width number from an offscreen render — confirm with the user.
+- **Offscreen has no fonts unless you give it some.** The offscreen plugin
+  ships without a font database, so by default it falls back to a font whose
+  widths are about 1.8x the real ones (the transformer's training panel asked
+  for 544px that way, 301px with real fonts). Set
+  `QT_QPA_FONTDIR=C:\Windows\Fonts` and widths become trustworthy and
+  screenshots readable. `tests/_bootstrap.offscreen()` already does this. Without
+  it, never chase a width number from an offscreen render.
 - Modal dialogs block a headless run. Patch them in the module under test:
   `module.QMessageBox.question = staticmethod(lambda *a, **k: QMessageBox.StandardButton.Yes)`.
 
@@ -533,8 +537,3 @@ Honest list, roughly by value:
    — the dataset worker, the train worker, `_start` and `_cleanup_*`.
    Extracting a common base is tempting; resist it unless the duplication
    actually hurts, because the independence of the five paths is the point.
-6. **Two training panels are wider than the column offscreen.** The sequence
-   and transformer panels' metric captions ("Validation", "Val accuracy") make
-   them ask for 520-544px against a 518px column, so offscreen shows a
-   horizontal scrollbar. Offscreen widths are inflated ~2x, so this is probably
-   fine on a real screen — but it has not been checked on one.

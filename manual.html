@@ -485,7 +485,20 @@
         </ul>
       </li>
       <li>
-        <a href="#transformer"><span class="num">9</span>Transformer</a>
+        <a href="#atencion-facil"><span class="num">9</span>La atención, fácil</a>
+        <ul>
+          <li><a href="#fa-problema">El problema</a></li>
+          <li><a href="#fa-biblioteca">Preguntarle a todos</a></li>
+          <li><a href="#fa-cuenta">Un ejemplo a mano</a></li>
+          <li><a href="#fa-orden">El problema del orden</a></li>
+          <li><a href="#fa-cabezas">Varias cabezas</a></li>
+          <li><a href="#fa-receta">La receta</a></li>
+          <li><a href="#fa-mirar">Mirar no es usar</a></li>
+          <li><a href="#fa-probalo">Probalo</a></li>
+        </ul>
+      </li>
+      <li>
+        <a href="#transformer"><span class="num">10</span>Transformer</a>
         <ul>
           <li><a href="#tf-atencion">Qué es la atención</a></li>
           <li><a href="#tf-posicion">Por qué necesita posición</a></li>
@@ -495,8 +508,8 @@
           <li><a href="#tf-etapas">Las cuatro etapas</a></li>
         </ul>
       </li>
-      <li><a href="#experimentos"><span class="num">10</span>Experimentos</a></li>
-      <li><a href="#glosario"><span class="num">11</span>Glosario</a></li>
+      <li><a href="#experimentos"><span class="num">11</span>Experimentos</a></li>
+      <li><a href="#glosario"><span class="num">12</span>Glosario</a></li>
     </ol>
   </nav>
 
@@ -550,10 +563,12 @@ pip install -r requirements.txt</pre>
 
       <h4>Cómo leer este manual</h4>
       <p>
-        Los capítulos 3 y 5 son <strong>conceptos</strong>: lo que tenés que entender.
-        Los capítulos 4 y 6 son <strong>referencia</strong>: qué hace cada control.
-        El capítulo 7 son <strong>experimentos</strong> para hacer con la app abierta,
-        y es la parte que más te va a enseñar.
+        Los capítulos 3, 5 y 9 son <strong>conceptos</strong>: lo que tenés que
+        entender, explicado desde cero. Los capítulos 4 y 6 son
+        <strong>referencia</strong>: qué hace cada control. Los capítulos 7, 8 y 10
+        mezclan las dos cosas para los workspaces más nuevos. Y el
+        <a href="#experimentos">capítulo 11</a> son <strong>experimentos</strong> para
+        hacer con la app abierta: es la parte que más te va a enseñar.
       </p>
       <p>
         Cuando veas algo así <span class="ui">Build dataset</span>, es un botón o un
@@ -744,8 +759,8 @@ pip install -r requirements.txt</pre>
           querés ver el mecanismo que está adentro de los modelos de lenguaje actuales:
           <strong>la atención</strong>. Cada posición mira a todas las demás y decide
           cuánto le importa cada una. La app te dibuja esas decisiones como un mapa —
-          y el <a href="#transformer">capítulo 9</a> te enseña a no creerle sin
-          probarlo.
+          El <a href="#atencion-facil">capítulo 9</a> te lo explica fácil, y el
+          <a href="#transformer">10</a> te enseña a no creerle sin probarlo.
         </p>
       </div>
     </section>
@@ -837,7 +852,7 @@ pip install -r requirements.txt</pre>
       <div class="note">
         <span class="note-label">Probalo</span>
         <p>
-          En el capítulo 7 hay un experimento donde sacás todas las capas ocultas y
+          En el <a href="#experimentos">capítulo 11</a> hay un experimento donde sacás todas las capas ocultas y
           entrenás con el dataset <span class="ui">Two moons</span>. Vas a ver a la red
           fracasar en vivo. Eso es una línea recta intentando separar dos lunas.
         </p>
@@ -2549,13 +2564,273 @@ pip install -r requirements.txt</pre>
       </div>
     </section>
 
-        <!-- ============================================================ 9 -->
+            <!-- ============================================================ 9 -->
+    <section id="atencion-facil">
+      <h2><span class="chapter">09</span>La atención, explicada fácil</h2>
+      <p class="section-lede">
+        Antes de los mapas y las pruebas, la idea. Sin fórmulas, con una frase, una
+        cuenta que podés hacer con papel y lápiz, y una receta de cinco pasos.
+      </p>
+
+      <h3 id="fa-problema">El problema: una palabra sola no alcanza</h3>
+      <p>
+        Leé estas dos frases y fijate en la palabra <strong>«estaba»</strong>. En cada
+        una habla de algo distinto, y vos te das cuenta sin pensarlo. ¿Cómo? Porque
+        mirás el resto de la frase.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 260" role="img" aria-label="Dos frases casi iguales. En la primera, El perro no cruzo la calle porque estaba cansado, una flecha va de la palabra estaba hasta perro: quien estaba cansado era el perro. En la segunda, El perro no cruzo la calle porque estaba muy ancha, la flecha va de estaba hasta calle. La misma palabra necesita mirar a otra distinta segun la pista que viene despues">
+          <defs>
+            <marker id="arFa1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--out)"></path>
+            </marker>
+          </defs>
+          <text x="0" y="16" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">FRASE 1 &#8212; ¿quién estaba cansado?</text>
+          <path d="M 381.0,60 C 381.0,32 62.1,32 62.1,56" fill="none" stroke="var(--out)" stroke-width="3.0" marker-end="url(#arFa1)"></path>
+          <rect x="0.0" y="62" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="14.8" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">El</text><rect x="35.6" y="62" width="53.0" height="30" rx="5" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.4"></rect><text x="62.1" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--good)">perro</text><rect x="94.6" y="62" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="109.4" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">no</text><rect x="130.2" y="62" width="53.0" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="156.7" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">cruzó</text><rect x="189.2" y="62" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="204.0" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">la</text><rect x="224.8" y="62" width="53.0" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="251.3" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">calle</text><rect x="283.8" y="62" width="60.8" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="314.2" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">porque</text><rect x="350.6" y="62" width="60.8" height="30" rx="5" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.4"></rect><text x="381.0" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--out)">estaba</text><rect x="417.4" y="62" width="68.6" height="30" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="451.7" y="82" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--accent)">cansado</text>
+          <text x="502" y="82" font-size="13" font-weight="600" fill="var(--good)">&#8594; el perro</text>
+
+          <text x="0" y="134" font-family="monospace" font-size="12" font-weight="600" fill="var(--accent)">FRASE 2 &#8212; ¿qué estaba ancha?</text>
+          <path d="M 381.0,178 C 381.0,150 251.3,150 251.3,174" fill="none" stroke="var(--out)" stroke-width="3.0" marker-end="url(#arFa1)"></path>
+          <rect x="0.0" y="180" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="14.8" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">El</text><rect x="35.6" y="180" width="53.0" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="62.1" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">perro</text><rect x="94.6" y="180" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="109.4" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">no</text><rect x="130.2" y="180" width="53.0" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="156.7" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">cruzó</text><rect x="189.2" y="180" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="204.0" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">la</text><rect x="224.8" y="180" width="53.0" height="30" rx="5" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.4"></rect><text x="251.3" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--good)">calle</text><rect x="283.8" y="180" width="60.8" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="314.2" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">porque</text><rect x="350.6" y="180" width="60.8" height="30" rx="5" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.4"></rect><text x="381.0" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--out)">estaba</text><rect x="417.4" y="180" width="37.4" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="436.1" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">muy</text><rect x="460.8" y="180" width="53.0" height="30" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4" stroke-dasharray="4 3"></rect><text x="487.3" y="200" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--accent)">ancha</text>
+          <text x="530" y="200" font-size="13" font-weight="600" fill="var(--good)">&#8594; la calle</text>
+
+          <rect x="0" y="232" width="14" height="12" rx="2" fill="var(--out-bg)" stroke="var(--out)"></rect>
+          <text x="20" y="243" font-size="11.5" fill="currentColor">la que pregunta</text>
+          <rect x="130" y="232" width="14" height="12" rx="2" fill="var(--good-bg)" stroke="var(--good)"></rect>
+          <text x="150" y="243" font-size="11.5" fill="currentColor">la que encontró</text>
+          <rect x="262" y="232" width="14" height="12" rx="2" fill="var(--accent-bg)" stroke="var(--accent)" stroke-dasharray="3 2"></rect>
+          <text x="282" y="243" font-size="11.5" fill="currentColor">la pista que decidió</text>
+        </svg>
+        <figcaption>
+          <b>La misma palabra, dos respuestas.</b> «Estaba» no significa nada sola: tiene
+          que mirar a las otras para saber de quién habla. Y la palabra que decide todo
+          viene <em>al final</em> — cansado o ancha. Eso es lo que la atención le deja
+          hacer a una red: que cada palabra busque, en toda la frase, a las que necesita.
+        </figcaption>
+      </figure>
+      <p>
+        Una red que lee palabra por palabra, como la del <a href="#secuencias">capítulo 8</a>,
+        tiene que <em>acordarse</em> de «perro» y «calle» hasta llegar a «cansado». Un
+        transformer hace otra cosa, más directa: deja que cada palabra <strong>mire a
+        todas las demás a la vez</strong> y elija a cuáles prestarles atención. De ahí
+        el nombre.
+      </p>
+
+      <h3 id="fa-biblioteca">La idea: preguntarle a todos a la vez</h3>
+      <p>
+        Imaginate una biblioteca chiquita. Llegás con una <strong>pregunta</strong>.
+        Cada libro tiene una <strong>etiqueta</strong> en el lomo que dice de qué trata.
+        Comparás tu pregunta con cada etiqueta: cuanto más se parecen, más te sirve ese
+        libro. Y al final te llevás un poco del <strong>contenido</strong> de cada uno —
+        mucho de los que se parecían, casi nada de los otros.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>En la biblioteca</th><th>En la frase</th><th>Cómo se llama de verdad</th></tr></thead>
+          <tbody>
+            <tr><td>Tu pregunta</td><td>Lo que una palabra busca: «¿quién hace esto?»</td><td><em>query</em></td></tr>
+            <tr><td>La etiqueta del lomo</td><td>Lo que cada palabra ofrece: «soy un animal», «soy una acción»</td><td><em>key</em></td></tr>
+            <tr><td>El contenido del libro</td><td>La información que la palabra aporta si la elegís</td><td><em>value</em></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <span class="note-label">Lo importante</span>
+        <p>
+          Nadie le escribe a la red «soy un animal». Las preguntas y las etiquetas son
+          números, y la red los ajusta sola mientras entrena — igual que los pesos del
+          <a href="#entrenar">capítulo 3</a>. Aprende qué conviene preguntar y qué
+          conviene ofrecer, porque así se equivoca menos.
+        </p>
+      </div>
+
+      <h3 id="fa-cuenta">Un ejemplo que podés hacer a mano</h3>
+      <p>
+        Frase: <strong>«el gato come»</strong>. Nos paramos en la palabra «come», que
+        pregunta «¿quién hace esto?». Cada palabra recibe un puntaje según cuánto se
+        parece su etiqueta a esa pregunta. Después, cada puntaje se divide por el total
+        para que todo sume 100%.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 280" role="img" aria-label="Una tabla para la frase el gato come, desde el punto de vista de la palabra come. Puntajes: el 1, gato 8, come 1. El total es 10, asi que los porcentajes son 10, 80 y 10. Una barra larga para gato y dos cortas. Abajo: la nueva come es 10 por ciento de el, 80 por ciento de gato y 10 por ciento de come">
+          <text x="0" y="16" font-family="monospace" font-size="12" font-weight="600" fill="var(--out)">«come» PREGUNTA: ¿quién hace esto?</text>
+          <g font-family="monospace" font-size="11" fill="currentColor" opacity="0.7" font-weight="600">
+            <text x="10" y="52">PALABRA</text>
+            <text x="150" y="52" text-anchor="middle">PUNTAJE</text>
+            <text x="265" y="52" text-anchor="middle">CUENTA</text>
+            <text x="380" y="52" text-anchor="end">ATENCIÓN</text>
+          </g>
+          <line x1="0" y1="62" x2="720" y2="62" stroke="currentColor" stroke-width="1" opacity="0.2"></line>
+          <text x="10" y="88" font-family="monospace" font-size="14" fill="currentColor">el</text><text x="150" y="88" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor">1</text><text x="265" y="88" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor" opacity="0.75">1 &#247; 10</text><text x="380" y="88" font-family="monospace" font-size="14" text-anchor="end" fill="currentColor">10%</text><rect x="400" y="74" width="28" height="18" rx="3" fill="var(--accent)" opacity="0.45"></rect><text x="10" y="128" font-family="monospace" font-size="14" fill="var(--good)" font-weight="600">gato</text><text x="150" y="128" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor">8</text><text x="265" y="128" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor" opacity="0.75">8 &#247; 10</text><text x="380" y="128" font-family="monospace" font-size="14" text-anchor="end" fill="var(--good)" font-weight="600">80%</text><rect x="400" y="114" width="224" height="18" rx="3" fill="var(--good)" opacity="0.9"></rect><text x="10" y="168" font-family="monospace" font-size="14" fill="currentColor">come</text><text x="150" y="168" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor">1</text><text x="265" y="168" font-family="monospace" font-size="14" text-anchor="middle" fill="currentColor" opacity="0.75">1 &#247; 10</text><text x="380" y="168" font-family="monospace" font-size="14" text-anchor="end" fill="currentColor">10%</text><rect x="400" y="154" width="28" height="18" rx="3" fill="var(--accent)" opacity="0.45"></rect>
+          <line x1="0" y1="178" x2="720" y2="178" stroke="currentColor" stroke-width="1" opacity="0.2"></line>
+          <text x="10" y="204" font-size="13" fill="currentColor">Total de puntajes: 1 + 8 + 1 = 10. Cada puntaje dividido por el total da su parte, y las partes suman 100%.</text>
+          <text x="10" y="234" font-size="13.5" font-weight="600" fill="currentColor">La nueva «come» = 10% de «el» + <tspan fill="var(--good)">80% de «gato»</tspan> + 10% de «come»</text>
+          <text x="10" y="262" font-size="13" fill="currentColor">Ahora «come» lleva adentro la información de quién es el que come.</text>
+        </svg>
+        <figcaption>
+          <b>Toda la atención en una cuenta de primaria.</b> Los puntajes de este ejemplo
+          los inventamos para que la cuenta sea fácil. Lo que no inventamos es la idea:
+          cada palabra reparte el 100% de su atención entre todas, y después se arma de
+          nuevo mezclándolas en esas proporciones.
+        </figcaption>
+      </figure>
+      <div class="note">
+        <span class="note-label">Una sola aclaración honesta</span>
+        <p>
+          La red de verdad no divide por el total: usa una cuenta un poco distinta, que
+          se llama <em>softmax</em>, y que exagera las diferencias — el que tiene más
+          puntaje se lleva todavía más. Pero la idea es exactamente la misma: repartir el
+          100% de la atención entre todas las palabras.
+        </p>
+      </div>
+      <p>
+        Y esto no lo hace solo «come». <strong>Todas las palabras lo hacen al mismo
+        tiempo</strong>, cada una con su propia pregunta. Si ponés todos esos repartos
+        uno debajo del otro, fila por fila, tenés una grilla. Esa grilla es el
+        <strong>mapa de atención</strong> que dibuja la app — lo vas a ver en el
+        <a href="#tf-mapa">capítulo 10</a>.
+      </p>
+
+      <h3 id="fa-orden">El problema del orden</h3>
+      <p>
+        Hay una trampa. Mirá estas dos frases:
+      </p>
+      <div class="two-col">
+        <div class="card"><h4>Frase A</h4><p><strong>Juan</strong> le ganó a <strong>Pedro</strong>.</p></div>
+        <div class="card"><h4>Frase B</h4><p><strong>Pedro</strong> le ganó a <strong>Juan</strong>.</p></div>
+      </div>
+      <p>
+        Tienen <em>exactamente</em> las mismas palabras y dicen lo contrario. Y la cuenta
+        de recién compara preguntas con etiquetas — nunca pregunta <em>dónde</em> está
+        cada palabra. Para la atención sola, las dos frases son la misma bolsa de
+        palabras. No puede distinguirlas.
+      </p>
+      <p>
+        La solución es simple: a cada palabra se le pega un <strong>número de
+        asiento</strong> antes de empezar. «Juan, asiento 1». «Pedro, asiento 5». Ahora sí
+        hay un antes y un después. Eso se llama <strong>codificación posicional</strong>,
+        y en la app es la casilla <span class="ui">Positional encoding</span>.
+      </p>
+      <div class="note">
+        <span class="note-label">Medido en la app</span>
+        <p>
+          Con la casilla apagada, la tarea «¿cuál fue el primer token?» baja de acertar
+          siempre a acertar una de cada cuatro. Y la tarea «¿cuál es el más repetido?»
+          sigue acertando siempre: para contar no hace falta saber el orden. Los números
+          exactos están en el <a href="#tf-posicion">capítulo 10</a>.
+        </p>
+      </div>
+
+      <h3 id="fa-cabezas">Varias cabezas: varios pares de ojos</h3>
+      <p>
+        Una palabra puede necesitar buscar más de una cosa: «¿quién?», pero también
+        «¿cuándo?» o «¿dónde?». Por eso un transformer no mira una sola vez: tiene
+        varias <strong>cabezas</strong>, y cada una hace su propio reparto de atención
+        buscando algo distinto. Es como tener varios pares de ojos, cada uno atento a
+        otra cosa.
+      </p>
+      <p>
+        En la app, <span class="ui">Heads</span> es cuántos pares de ojos. Pero ojo, no
+        es gratis: los pares de ojos se reparten el ancho de la red entre ellos. Con
+        demasiados, cada uno queda tan chiquito que no ve bien — lo medimos en el
+        <a href="#tf-dos-pasos">capítulo 10</a>.
+      </p>
+
+      <h3 id="fa-receta">La receta del transformer</h3>
+      <p>
+        Juntando todo, un transformer es una receta de cinco pasos. Cada caja de este
+        dibujo es una caja del diagrama que ves en la app.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 220" role="img" aria-label="La receta de un transformer en cinco cajas: uno, entran las palabras; dos, cada una recibe una ficha de numeros y un numero de asiento; tres, atencion, todas miran a todas y se mezclan; cuatro, pensar, cada una por su lado con lo que junto; cinco, respuesta. Una flecha curva indica que los pasos tres y cuatro se repiten, y cada repeticion es un bloque. Debajo de cada caja, el nombre que tiene en el diagrama de la app">
+          <defs>
+            <marker id="arFa3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+          <path d="M 505,80 C 505,38 359,38 359,76" fill="none" stroke="var(--out)" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arFa3)"></path>
+          <text x="432" y="34" font-size="12" font-weight="600" text-anchor="middle" fill="var(--out)">3 y 4 se repiten: cada vuelta es un bloque</text>
+          <rect x="6" y="82" width="122" height="74" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"></rect><text x="67" y="106" font-size="13" font-weight="600" text-anchor="middle" fill="var(--data)">1 · Palabras</text><text x="67" y="127" font-size="11.5" text-anchor="middle" fill="currentColor">entran de a</text><text x="67" y="143" font-size="11.5" text-anchor="middle" fill="currentColor">muchas juntas</text><text x="67" y="178" font-family="monospace" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.6">Tokens</text><line x1="131" y1="119" x2="148" y2="119" stroke="currentColor" stroke-width="1.5" marker-end="url(#arFa3)"></line><rect x="152" y="82" width="122" height="74" rx="8" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.6"></rect><text x="213" y="106" font-size="13" font-weight="600" text-anchor="middle" fill="var(--accent)">2 · Ficha</text><text x="213" y="127" font-size="11.5" text-anchor="middle" fill="currentColor">cada una recibe</text><text x="213" y="143" font-size="11.5" text-anchor="middle" fill="currentColor">números + asiento</text><text x="213" y="178" font-family="monospace" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.6">Embed</text><line x1="277" y1="119" x2="294" y2="119" stroke="currentColor" stroke-width="1.5" marker-end="url(#arFa3)"></line><rect x="298" y="82" width="122" height="74" rx="8" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.6"></rect><text x="359" y="106" font-size="13" font-weight="600" text-anchor="middle" fill="var(--out)">3 · Atención</text><text x="359" y="127" font-size="11.5" text-anchor="middle" fill="currentColor">todas miran a</text><text x="359" y="143" font-size="11.5" text-anchor="middle" fill="currentColor">todas y se mezclan</text><text x="359" y="178" font-family="monospace" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.6">Attention</text><line x1="423" y1="119" x2="440" y2="119" stroke="currentColor" stroke-width="1.5" marker-end="url(#arFa3)"></line><rect x="444" y="82" width="122" height="74" rx="8" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.6"></rect><text x="505" y="106" font-size="13" font-weight="600" text-anchor="middle" fill="var(--accent)">4 · Pensar</text><text x="505" y="127" font-size="11.5" text-anchor="middle" fill="currentColor">cada una sola,</text><text x="505" y="143" font-size="11.5" text-anchor="middle" fill="currentColor">con lo que juntó</text><text x="505" y="178" font-family="monospace" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.6">Feed-forward</text><line x1="569" y1="119" x2="586" y2="119" stroke="currentColor" stroke-width="1.5" marker-end="url(#arFa3)"></line><rect x="590" y="82" width="122" height="74" rx="8" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.6"></rect><text x="651" y="106" font-size="13" font-weight="600" text-anchor="middle" fill="var(--good)">5 · Respuesta</text><text x="651" y="127" font-size="11.5" text-anchor="middle" fill="currentColor">se junta todo</text><text x="651" y="143" font-size="11.5" text-anchor="middle" fill="currentColor">y se contesta</text><text x="651" y="178" font-family="monospace" font-size="11" text-anchor="middle" fill="currentColor" opacity="0.6">Answer</text>
+          <text x="6" y="212" font-size="11.5" fill="currentColor" opacity="0.7">En gris, abajo de cada caja: cómo se llama ese paso en el diagrama de la app.</text>
+        </svg>
+        <figcaption>
+          <b>Un transformer es esto, repetido.</b> Mirar a los demás (paso 3) y pensar
+          cada uno por su cuenta (paso 4), una y otra vez. El de la app hace dos vueltas;
+          los modelos de lenguaje grandes hacen decenas, con la misma receta.
+        </figcaption>
+      </figure>
+      <ol class="body-list">
+        <li><strong>Entran las palabras</strong> (en la app, <em>tokens</em>: números que representan palabras o símbolos).</li>
+        <li><strong>Cada una recibe su ficha</strong>: una lista de números que la describe, más su número de asiento.</li>
+        <li><strong>Atención</strong>: todas miran a todas, reparten su 100% y se mezclan. Es la cuenta del gato.</li>
+        <li><strong>Pensar</strong>: cada palabra, sola, procesa lo que juntó. Es una red densa chiquita, como las del <a href="#dense">capítulo 4</a>.</li>
+        <li><strong>Respuesta</strong>: se junta todo y se contesta.</li>
+      </ol>
+      <p>
+        Los pasos 3 y 4 forman un <strong>bloque</strong>, y se repiten. ¿Para qué
+        repetir? Porque algunas preguntas necesitan dos pasos: primero encontrar una
+        pista, y después usar esa pista para encontrar la respuesta. Una sola vuelta no
+        alcanza — también lo medimos, en el <a href="#tf-dos-pasos">capítulo 10</a>.
+      </p>
+
+      <h3 id="fa-mirar">Mirar no es lo mismo que usar</h3>
+      <p>
+        Última idea, y es la más importante. Pensá en un compañero que mira fijo el
+        pizarrón durante toda la clase. ¿Está prestando atención? Capaz. O capaz está
+        pensando en otra cosa y el pizarrón es solo adonde apuntan sus ojos.
+      </p>
+      <p>
+        Con el mapa de atención pasa igual. Que una palabra le dé mucho peso a otra no
+        garantiza que la respuesta haya salido de ahí. ¿Cómo se sabe? Se le
+        <strong>tapa</strong> lo que estaba mirando y se ve si igual contesta bien. Si
+        contesta igual, no lo estaba usando. La app hace esa prueba sola al final de cada
+        entrenamiento, y el <a href="#tf-fiel">capítulo 10</a> te muestra un mapa que
+        parece clarísimo y resulta ser pura decoración.
+      </p>
+
+      <h3 id="fa-probalo">Probalo en cinco minutos</h3>
+      <div class="lab">
+        <div class="lab-head"><span class="lab-n">&#9658;</span><h3>El juego de «Simón dice»</h3></div>
+        <dl>
+          <dt>La tarea</dt><dd><span class="ui">After the cue</span>. Es como «Simón dice»: en cada secuencia aparece una palabra marca (el <em>cue</em>), y la respuesta es la palabra que viene justo después.</dd>
+          <dt>Paso 1</dt><dd>Andá a la pestaña <span class="ui">Transformer (attention)</span>, elegí esa tarea en <span class="ui">1. Data</span> y apretá <span class="ui">Generate</span>.</dd>
+          <dt>Paso 2</dt><dd>En <span class="ui">3. Training</span> apretá <span class="ui">Train</span> sin tocar nada. Tarda menos de un minuto.</dd>
+          <dt>Paso 3</dt><dd>En <span class="ui">4. Inspect</span> mirá el mapa y apretá <span class="ui">Next sequence</span> varias veces. La columna encendida <strong>se mueve</strong>: casi siempre cae justo donde está la respuesta, al lado del cue.</dd>
+          <dt>Paso 4</dt><dd>Volvé a <span class="ui">2. Architecture</span>, apagá <span class="ui">Positional encoding</span> y entrená de nuevo.</dd>
+          <dt class="lesson">Vas a ver</dt><dd class="lesson">Que se rompe. «La que viene después» necesita saber qué está antes y qué después — y sin números de asiento, eso no existe. Es la trampa de Juan y Pedro, en vivo.</dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <h4>Todo el capítulo en cinco frases</h4>
+        <ol class="body-list">
+          <li>Una palabra necesita mirar a las otras para saber qué significa.</li>
+          <li>La atención es repartir el 100% entre todas y mezclarlas en esa proporción.</li>
+          <li>La atención sola no sabe de orden: hay que pegarle a cada palabra su número de asiento.</li>
+          <li>Un transformer es mirar y pensar, repetido varias veces.</li>
+          <li>Que mire algo no quiere decir que lo use. Eso se prueba, no se supone.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- ============================================================ 10 -->
     <section id="transformer">
-      <h2><span class="chapter">09</span>Transformer: la atención, y cuándo creerle</h2>
+      <h2><span class="chapter">10</span>Transformer: la atención, y cuándo creerle</h2>
       <p class="section-lede">
         El mecanismo de los modelos de lenguaje, en miniatura. Y una lección que casi
         nadie enseña junto con él: un mapa de atención lindo no es una explicación.
       </p>
+      <div class="note">
+        <span class="note-label">¿Es tu primera vez con esto?</span>
+        <p>
+          Empezá por el <a href="#atencion-facil">capítulo 9</a>. Este capítulo da por
+          sabida la idea de la atención y va directo a medirla.
+        </p>
+      </div>
 
       <h3 id="tf-atencion">Qué es la atención</h3>
       <p>
@@ -2802,9 +3077,9 @@ pip install -r requirements.txt</pre>
       </div>
     </section>
 
-    <!-- ============================================================ 10 -->
+    <!-- ============================================================ 11 -->
     <section id="experimentos">
-      <h2><span class="chapter">10</span>Dieciocho experimentos</h2>
+      <h2><span class="chapter">11</span>Dieciocho experimentos</h2>
       <p class="section-lede">
         Acá está lo que más te va a enseñar. Cada uno rompe algo a propósito, porque ver
         fallar una red enseña más que verla funcionar.
@@ -3009,9 +3284,9 @@ pip install -r requirements.txt</pre>
       </div>
     </section>
 
-    <!-- ============================================================ 11 -->
+    <!-- ============================================================ 12 -->
     <section id="glosario">
-      <h2><span class="chapter">11</span>Glosario</h2>
+      <h2><span class="chapter">12</span>Glosario</h2>
       <p class="section-lede">Las palabras que más vas a leer, en una línea cada una.</p>
 
       <dl class="glossary">
@@ -3045,6 +3320,14 @@ pip install -r requirements.txt</pre>
         <div><dt>Denoising</dt><dd>Entrenar con la entrada sucia y calificar contra la limpia, para que aprenda a reparar.</dd></div>
         <div><dt>Detección de anomalías</dt><dd>Usar el error de reconstrucción para marcar lo que el modelo nunca vio.</dd></div>
         <div><dt>AUC</dt><dd>Agarrás uno normal y uno raro al azar: qué tan seguido los ordena bien. 0.5 es tirar una moneda.</dd></div>
+        <div><dt>Token</dt><dd>Un pedacito de texto (una palabra o un símbolo) convertido en número para que la red lo pueda leer.</dd></div>
+        <div><dt>Atención</dt><dd>Que cada palabra reparta el 100% de su interés entre todas las demás y se arme de nuevo mezclándolas en esa proporción.</dd></div>
+        <div><dt>Query, key, value</dt><dd>La pregunta que hace una palabra, la etiqueta que ofrece cada una y la información que aporta si la eligen. La biblioteca del capítulo 9.</dd></div>
+        <div><dt>Softmax</dt><dd>La cuenta que convierte puntajes en porcentajes que suman 100%, exagerando un poco al que más puntaje tiene.</dd></div>
+        <div><dt>Codificación posicional</dt><dd>El número de asiento que se le pega a cada palabra. Sin él, la atención no sabe qué vino antes.</dd></div>
+        <div><dt>Cabeza (head)</dt><dd>Un reparto de atención propio. Varias cabezas son varios pares de ojos buscando cosas distintas.</dd></div>
+        <div><dt>Bloque</dt><dd>Una vuelta de «mirar a los demás» más «pensar cada uno». Un transformer apila varios.</dd></div>
+        <div><dt>Mapa de atención</dt><dd>La grilla con el reparto de todas las palabras, fila por fila. Una imagen de pesos, no una explicación, hasta que alguien la prueba.</dd></div>
       </dl>
 
       <div class="note" style="margin-top:32px">

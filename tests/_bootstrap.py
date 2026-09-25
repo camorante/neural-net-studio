@@ -22,13 +22,24 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
+WINDOWS_FONTS = Path(os.environ.get("WINDIR", r"C:\Windows")) / "Fonts"
+
+
 def offscreen() -> None:
     """Render Qt into memory instead of onto a screen.
 
     Must run before PyQt6 is imported: the platform plugin is chosen once, at
     import time, and cannot be swapped afterwards.
+
+    The offscreen plugin ships with no font database of its own, so without
+    QT_QPA_FONTDIR it falls back to a font whose widths are roughly 1.8x the
+    real ones - measured on the transformer's training panel as 544px against
+    301px. Pointing it at the system fonts makes widths trustworthy and the
+    screenshots readable. setdefault, so a caller can still override it.
     """
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    if WINDOWS_FONTS.is_dir():
+        os.environ.setdefault("QT_QPA_FONTDIR", str(WINDOWS_FONTS))
 
 
 def output_dir() -> Path:
