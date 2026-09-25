@@ -495,6 +495,7 @@
           <li><a href="#fa-receta">La receta</a></li>
           <li><a href="#fa-mirar">Mirar no es usar</a></li>
           <li><a href="#fa-probalo">Probalo</a></li>
+          <li><a href="#fa-completo">Todo junto, de punta a punta</a></li>
         </ul>
       </li>
       <li>
@@ -2804,6 +2805,233 @@ pip install -r requirements.txt</pre>
           <dt class="lesson">Vas a ver</dt><dd class="lesson">Que se rompe. «La que viene después» necesita saber qué está antes y qué después — y sin números de asiento, eso no existe. Es la trampa de Juan y Pedro, en vivo.</dd>
         </dl>
       </div>
+
+      <h3 id="fa-completo">Todo junto: una frase, de punta a punta</h3>
+      <p>
+        Ahora sí, juntemos todo en un solo ejemplo. Vamos a seguir una frase por los cinco
+        pasos de la receta, con cuentas que podés hacer con papel y lápiz.
+      </p>
+      <p style="font-size:20px; text-align:center; margin: 22px 0;">
+        <strong>«La gata comió porque tenía hambre.»</strong>
+      </p>
+      <p>
+        Y le vamos a hacer una pregunta al final: <strong>¿quién tenía hambre?</strong> Vos
+        sabés que la gata. La red lo tiene que descubrir, porque en la frase «hambre» y
+        «gata» ni siquiera están pegadas.
+      </p>
+      <div class="note">
+        <span class="note-label">Antes de arrancar</span>
+        <p>
+          Todos los números de este ejemplo son <strong>inventados</strong> para que las
+          cuentas salgan redondas. Los <strong>pasos</strong> no: son exactamente los que
+          hace la red de la app. Y simplificamos una cosa: usamos la misma ficha como
+          etiqueta y como contenido. En la red de verdad son versiones distintas, que la
+          red aprende.
+        </p>
+      </div>
+
+      <h4>Paso 1 · Las palabras entran</h4>
+      <p>
+        La red no lee letras: cada palabra se convierte en un número, como un código de
+        barras. «La» es el 1, «gata» el 2, y así. En la app, esos números son los
+        <em>tokens</em>. Por ahora no significan nada: son solo una manera de nombrar
+        cada palabra.
+      </p>
+
+      <h4>Paso 2 · Cada palabra recibe su ficha y su asiento</h4>
+      <p>
+        Cada palabra recibe una <strong>ficha</strong>: una lista corta de números que la
+        describe. Nosotros le ponemos cuatro casilleros con nombre para poder seguirlos;
+        la red de la app usa 64, y nadie les pone nombre — los aprende sola. Además, a
+        cada palabra se le pega su <strong>número de asiento</strong>.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Palabra</th><th>Asiento</th><th>¿Ser vivo?</th><th>¿Acción?</th><th>¿Cosa o sensación?</th><th>¿Relleno?</th></tr></thead>
+          <tbody><tr><td><strong>La</strong></td><td>1</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">1</td></tr><tr><td><strong>gata</strong></td><td>2</td><td class="num-cell">1</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">0</td></tr><tr><td><strong>comió</strong></td><td>3</td><td class="num-cell">0</td><td class="num-cell">1</td><td class="num-cell">0</td><td class="num-cell">0</td></tr><tr><td><strong>porque</strong></td><td>4</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">1</td></tr><tr><td><strong>tenía</strong></td><td>5</td><td class="num-cell">0</td><td class="num-cell">1</td><td class="num-cell">0</td><td class="num-cell">0</td></tr><tr><td><strong>hambre</strong></td><td>6</td><td class="num-cell">0</td><td class="num-cell">0</td><td class="num-cell">1</td><td class="num-cell">0</td></tr></tbody>
+        </table>
+      </div>
+      <p>
+        Mirá la ficha de «tenía»: solo dice «soy una acción». No sabe <em>quién</em> la
+        hace. Esa es la información que le falta, y la va a ir a buscar.
+      </p>
+
+      <h4>Paso 3 · Atención: «tenía» le pregunta a todos</h4>
+      <p>
+        «Tenía» arma su pregunta: <em>«busco un ser vivo que esté antes que yo»</em>. Cada
+        palabra recibe un puntaje según cuánto su ficha y su asiento encajan con esa
+        pregunta. Después se reparte el 100%, igual que con el gato.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 310" role="img" aria-label="La palabra tenia pregunta busco un ser vivo que este antes que yo. Puntajes de cada palabra: La 1, gata 12, comio 3, porque 1, tenia 2, hambre 1. El total es 20. Los porcentajes de atencion son 5, 60, 15, 5, 10 y 5. La barra de gata es la mas larga">
+          <text x="0" y="16" font-family="monospace" font-size="12" font-weight="600" fill="var(--out)">«tenía» PREGUNTA: busco un ser vivo que esté ANTES que yo</text>
+          <g font-family="monospace" font-size="11" fill="currentColor" opacity="0.7" font-weight="600">
+            <text x="10" y="54">PALABRA</text>
+            <text x="135" y="54" text-anchor="middle">ASIENTO</text>
+            <text x="225" y="54" text-anchor="middle">PUNTAJE</text>
+            <text x="330" y="54" text-anchor="middle">CUENTA</text>
+            <text x="445" y="54" text-anchor="end">ATENCIÓN</text>
+          </g>
+          <line x1="0" y1="64" x2="720" y2="64" stroke="currentColor" stroke-width="1" opacity="0.2"></line>
+          <text x="10" y="88" font-family="monospace" font-size="13.5" fill="currentColor">La</text><text x="135" y="88" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">1</text><text x="225" y="88" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">1</text><text x="330" y="88" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">1 &#247; 20</text><text x="445" y="88" font-family="monospace" font-size="13.5" text-anchor="end" fill="currentColor">5%</text><rect x="462" y="75" width="20" height="16" rx="3" fill="var(--accent)" opacity="0.45"></rect><text x="10" y="118" font-family="monospace" font-size="13.5" fill="var(--good)" font-weight="600">gata</text><text x="135" y="118" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">2</text><text x="225" y="118" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">12</text><text x="330" y="118" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">12 &#247; 20</text><text x="445" y="118" font-family="monospace" font-size="13.5" text-anchor="end" fill="var(--good)" font-weight="600">60%</text><rect x="462" y="105" width="240" height="16" rx="3" fill="var(--good)" opacity="0.9"></rect><text x="10" y="148" font-family="monospace" font-size="13.5" fill="currentColor">comió</text><text x="135" y="148" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">3</text><text x="225" y="148" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">3</text><text x="330" y="148" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">3 &#247; 20</text><text x="445" y="148" font-family="monospace" font-size="13.5" text-anchor="end" fill="currentColor">15%</text><rect x="462" y="135" width="60" height="16" rx="3" fill="var(--accent)" opacity="0.45"></rect><text x="10" y="178" font-family="monospace" font-size="13.5" fill="currentColor">porque</text><text x="135" y="178" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">4</text><text x="225" y="178" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">1</text><text x="330" y="178" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">1 &#247; 20</text><text x="445" y="178" font-family="monospace" font-size="13.5" text-anchor="end" fill="currentColor">5%</text><rect x="462" y="165" width="20" height="16" rx="3" fill="var(--accent)" opacity="0.45"></rect><text x="10" y="208" font-family="monospace" font-size="13.5" fill="currentColor">tenía</text><text x="135" y="208" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">5</text><text x="225" y="208" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">2</text><text x="330" y="208" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">2 &#247; 20</text><text x="445" y="208" font-family="monospace" font-size="13.5" text-anchor="end" fill="currentColor">10%</text><rect x="462" y="195" width="40" height="16" rx="3" fill="var(--accent)" opacity="0.45"></rect><text x="10" y="238" font-family="monospace" font-size="13.5" fill="currentColor">hambre</text><text x="135" y="238" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">6</text><text x="225" y="238" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor">1</text><text x="330" y="238" font-family="monospace" font-size="13.5" text-anchor="middle" fill="currentColor" opacity="0.75">1 &#247; 20</text><text x="445" y="238" font-family="monospace" font-size="13.5" text-anchor="end" fill="currentColor">5%</text><rect x="462" y="225" width="20" height="16" rx="3" fill="var(--accent)" opacity="0.45"></rect>
+          <line x1="0" y1="256" x2="720" y2="256" stroke="currentColor" stroke-width="1" opacity="0.2"></line>
+          <text x="10" y="280" font-size="13" fill="currentColor">Total: 1 + 12 + 3 + 1 + 2 + 1 = 20. «gata» es un ser vivo Y está en el asiento 2, antes que el 5: puntaje alto.</text>
+          <text x="10" y="302" font-size="13" fill="currentColor">«hambre» no es un ser vivo y encima está DESPUÉS: casi nada.</text>
+        </svg>
+        <figcaption>
+          <b>La pregunta de «tenía» tiene dos partes, y las dos importan.</b> «Ser vivo» la
+          contesta la ficha de cada palabra. «Antes que yo» la contesta el número de
+          asiento del paso 2. Sin asientos, esa segunda mitad no se podría calcular.
+        </figcaption>
+      </figure>
+      <p>
+        Ahora viene la mezcla. La nueva información de «tenía» es un poco de la ficha de
+        cada palabra, en esas proporciones. Casillero por casillero:
+      </p>
+      <ul>
+        <li><strong>¿Ser vivo?</strong> Solo «gata» lo tiene, y se lleva el 60%: <strong>0,60</strong>.</li>
+        <li><strong>¿Acción?</strong> «comió» (15%) más «tenía» misma (10%): <strong>0,25</strong>.</li>
+        <li><strong>¿Cosa o sensación?</strong> Solo «hambre», con su 5%: <strong>0,05</strong>.</li>
+        <li><strong>¿Relleno?</strong> «La» (5%) más «porque» (5%): <strong>0,10</strong>.</li>
+      </ul>
+      <p>
+        Y un detalle importante: esa mezcla <strong>se suma</strong> a la ficha que «tenía»
+        ya tenía, no la reemplaza. Así no se olvida de quién era. (En el código de la app
+        es literalmente una suma: la ficha vieja más lo que trajo la atención.)
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Casillero</th><th>Ficha de antes</th><th>Lo que trajo</th><th>Ficha nueva</th></tr></thead>
+          <tbody><tr><td>¿Es un ser vivo?</td><td class="num-cell">0</td><td class="num-cell">+ 0,60</td><td class="num-cell"><strong>0,60</strong></td></tr><tr><td>¿Es una acción?</td><td class="num-cell">1</td><td class="num-cell">+ 0,25</td><td class="num-cell"><strong>1,25</strong></td></tr><tr><td>¿Es una cosa o sensación?</td><td class="num-cell">0</td><td class="num-cell">+ 0,05</td><td class="num-cell"><strong>0,05</strong></td></tr><tr><td>¿Es relleno?</td><td class="num-cell">0</td><td class="num-cell">+ 0,10</td><td class="num-cell"><strong>0,10</strong></td></tr></tbody>
+        </table>
+      </div>
+      <p>
+        Mirá lo que cambió: «tenía» sigue siendo una acción (1,25), pero ahora además lleva
+        <strong>0,60 de «ser vivo»</strong> adentro. Ya sabe que la hizo alguien vivo. Eso
+        es la gata, viajando hasta «tenía».
+      </p>
+      <p>
+        Y esto no lo hizo solo «tenía»: las seis palabras hicieron su propia cuenta al mismo
+        tiempo. Puestas una debajo de la otra, forman el mapa:
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 400" role="img" aria-label="Una grilla de seis por seis con las palabras de la frase en las filas y en las columnas. Solo la fila de tenia esta llena: 5, 60, 15, 5, 10 y 5 por ciento, con la celda de gata marcada. Las demas filas tienen puntos suspensivos porque cada palabra hace su propia cuenta">
+          <text x="92" y="18" font-family="monospace" font-size="11" fill="currentColor" opacity="0.7" font-weight="600">COLUMNAS: a quién se mira</text>
+          <text x="0" y="388" font-family="monospace" font-size="11" fill="currentColor" opacity="0.7" font-weight="600">FILAS: quién está mirando</text>
+          <text x="82" y="88" font-family="monospace" font-size="12" text-anchor="end" fill="currentColor">La</text><rect x="92" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="115.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="142" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="165.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="192" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="215.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="242" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="265.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="292" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="315.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="342" y="58" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="365.5" y="87" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><text x="82" y="138" font-family="monospace" font-size="12" text-anchor="end" fill="currentColor">gata</text><rect x="92" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="115.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="142" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="165.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="192" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="215.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="242" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="265.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="292" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="315.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="342" y="108" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="365.5" y="137" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><text x="82" y="188" font-family="monospace" font-size="12" text-anchor="end" fill="currentColor">comió</text><rect x="92" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="115.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="142" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="165.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="192" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="215.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="242" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="265.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="292" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="315.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="342" y="158" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="365.5" y="187" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><text x="82" y="238" font-family="monospace" font-size="12" text-anchor="end" fill="currentColor">porque</text><rect x="92" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="115.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="142" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="165.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="192" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="215.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="242" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="265.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="292" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="315.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="342" y="208" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="365.5" y="237" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><text x="82" y="288" font-family="monospace" font-size="12" text-anchor="end" fill="var(--out)" font-weight="600">tenía</text><rect x="92" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="0.25"></rect><text x="115.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">5%</text><rect x="142" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="1.00" stroke="var(--good)" stroke-width="2.5"></rect><text x="165.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">60%</text><rect x="192" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="0.39"></rect><text x="215.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">15%</text><rect x="242" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="0.25"></rect><text x="265.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">5%</text><rect x="292" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="0.32"></rect><text x="315.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">10%</text><rect x="342" y="258" width="47" height="47" rx="3" fill="var(--accent)" opacity="0.25"></rect><text x="365.5" y="287" font-family="monospace" font-size="12.5" text-anchor="middle" fill="currentColor" font-weight="600">5%</text><text x="82" y="338" font-family="monospace" font-size="12" text-anchor="end" fill="currentColor">hambre</text><rect x="92" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="115.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="142" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="165.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="192" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="215.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="242" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="265.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="292" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="315.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><rect x="342" y="308" width="47" height="47" rx="3" fill="var(--surface-2)"></rect><text x="365.5" y="337" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor" opacity="0.4">&#183;&#183;&#183;</text><text x="115.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">La</text><text x="165.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">gata</text><text x="215.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">comió</text><text x="265.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">porque</text><text x="315.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">tenía</text><text x="365.5" y="46" font-family="monospace" font-size="12" text-anchor="middle" fill="currentColor">hambre</text>
+          <text x="420" y="82" font-size="13" font-weight="600" fill="var(--out)">La fila de «tenía»</text>
+          <text x="420" y="104" font-size="12.5" fill="currentColor">es la cuenta de recién,</text>
+          <text x="420" y="122" font-size="12.5" fill="currentColor">escrita de costado.</text>
+          <text x="420" y="162" font-size="13" font-weight="600" fill="currentColor">Las otras filas</text>
+          <text x="420" y="184" font-size="12.5" fill="currentColor">son las otras cinco palabras</text>
+          <text x="420" y="202" font-size="12.5" fill="currentColor">haciendo lo mismo, cada una</text>
+          <text x="420" y="220" font-size="12.5" fill="currentColor">con su propia pregunta, todas</text>
+          <text x="420" y="238" font-size="12.5" fill="currentColor">al mismo tiempo.</text>
+          <text x="420" y="278" font-size="13" font-weight="600" fill="var(--good)">Cada fila suma 100%.</text>
+        </svg>
+        <figcaption>
+          <b>Esto es un mapa de atención.</b> Llenamos una sola fila para no inventar las
+          otras cinco. La grilla de la pestaña <span class="ui">4. Inspect</span> es
+          exactamente esto, con todas las filas llenas y el color en lugar del número.
+        </figcaption>
+      </figure>
+
+      <h4>Paso 4 · Cada palabra piensa, sola</h4>
+      <p>
+        Ahora cada palabra toma su ficha nueva y la pasa por una redecita densa, como las
+        del <a href="#dense">capítulo 4</a>. Acá no mira a nadie: trabaja sola con lo que
+        juntó. «Tenía» tiene «soy una acción» y «la hizo un ser vivo» mezclados en una
+        misma ficha, y este paso los combina en algo más útil, algo como <em>«soy una
+        acción hecha por un animal»</em>.
+      </p>
+
+      <h4>Vuelta 2 · Los pasos 3 y 4 otra vez</h4>
+      <p>
+        Acá aparece para qué sirven los bloques. En la primera vuelta, «hambre» también
+        hizo su pregunta — <em>«¿de quién es esta sensación?»</em> — pero no encontró
+        nada claro: ninguna palabra decía «soy alguien que siente cosas».
+      </p>
+      <p>
+        En la segunda vuelta la cosa cambia. «Tenía» ya lleva a la gata adentro. Entonces
+        «hambre» pregunta de nuevo, encuentra a «tenía», y se lleva la gata <em>de
+        rebote</em>.
+      </p>
+
+      <figure>
+        <svg viewBox="0 0 720 240" role="img" aria-label="La frase La gata comio porque tenia hambre. Una flecha naranja por arriba va de tenia a gata: es el bloque 1, en el que tenia se entera de que la hizo un ser vivo. Una flecha azul por abajo va de hambre a tenia: es el bloque 2, en el que hambre encuentra a tenia, que ya sabe lo de la gata. La informacion llega en dos saltos">
+          <defs>
+            <marker id="arFx1" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--out)"></path>
+            </marker>
+            <marker id="arFx2" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+          <path d="M 432.9,94 C 432.9,44 252.0,44 252.0,88" fill="none" stroke="var(--out)" stroke-width="3" marker-end="url(#arFx1)"></path>
+          <text x="342" y="36" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--out)">BLOQUE 1: «tenía» busca quién la hizo</text>
+          <rect x="193.8" y="96" width="29.6" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="208.6" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">La</text><rect x="229.4" y="96" width="45.2" height="30" rx="5" fill="var(--good-bg)" stroke="var(--good)" stroke-width="1.4"></rect><text x="252.0" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--good)">gata</text><rect x="280.6" y="96" width="53.0" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="307.1" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">comió</text><rect x="339.6" y="96" width="60.8" height="30" rx="5" fill="var(--surface-2)" stroke="currentColor" stroke-width="1.4"></rect><text x="370.0" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="currentColor">porque</text><rect x="406.4" y="96" width="53.0" height="30" rx="5" fill="var(--out-bg)" stroke="var(--out)" stroke-width="1.4"></rect><text x="432.9" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--out)">tenía</text><rect x="465.4" y="96" width="60.8" height="30" rx="5" fill="var(--accent-bg)" stroke="var(--accent)" stroke-width="1.4"></rect><text x="495.8" y="116" font-family="monospace" font-size="13" text-anchor="middle" fill="var(--accent)">hambre</text>
+          <path d="M 495.8,128 C 495.8,176 432.9,176 432.9,134" fill="none" stroke="var(--accent)" stroke-width="3" marker-end="url(#arFx2)"></path>
+          <text x="464" y="196" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--accent)">BLOQUE 2: «hambre» busca de quién es</text>
+          <text x="360" y="226" font-size="12.5" text-anchor="middle" fill="currentColor">«hambre» nunca mira a «gata». La encuentra A TRAVÉS de «tenía», que ya la llevaba adentro.</text>
+        </svg>
+        <figcaption>
+          <b>Dos vueltas, dos saltos.</b> En el bloque 1, «tenía» se queda con la gata. En el
+          bloque 2, «hambre» mira a «tenía» y se lleva la gata de rebote. Con una sola
+          vuelta, «hambre» no se habría enterado de nada.
+        </figcaption>
+      </figure>
+      <p>
+        Es lo mismo que medimos en la app con la tarea del cue: con un solo bloque se
+        quedaba en 0,31, y con dos resolvía todo. Algunas preguntas necesitan dos saltos.
+      </p>
+
+      <h4>Paso 5 · La respuesta</h4>
+      <p>
+        Le preguntamos a la red: <strong>¿quién tenía hambre?</strong> Para contestar,
+        junta las fichas de todas las palabras en una sola — la de la app las promedia,
+        por eso su caja dice <span class="ui">Average every position</span>. Como ahora
+        «tenía» y «hambre» llevan a la gata adentro, esa ficha final apunta a la gata, y
+        la respuesta es <strong>«gata»</strong>. Nadie le dijo a la red que «hambre» y
+        «gata» iban juntas: lo armó en dos vueltas, mirando y pensando.
+      </p>
+
+      <h4>La prueba final · ¿Usó lo que miró?</h4>
+      <p>
+        Nos queda la última idea del capítulo, <em>mirar no es usar</em>. ¿Cómo sabemos que
+        la respuesta salió de verdad de la gata? La tapamos. Cambiamos una sola palabra:
+      </p>
+      <p style="font-size:18px; text-align:center; margin: 18px 0;">
+        «La <strong>silla</strong> comió porque tenía hambre.»
+      </p>
+      <p>
+        Es una frase absurda, y justamente por eso sirve. Si ahora la red contesta
+        «silla», es que de verdad estaba usando la palabra que miraba. Si sigue contestando
+        «gata», el mapa nos estaba mostrando algo que la respuesta no usaba. Esa es la
+        prueba que la app hace sola al final de cada entrenamiento, y que el
+        <a href="#tf-fiel">capítulo 10</a> te muestra con números reales.
+      </p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Paso</th><th>Qué pasó con nuestra frase</th><th>Caja de la app</th></tr></thead>
+          <tbody>
+            <tr><td>1 · Palabras</td><td>Seis palabras se volvieron seis números</td><td><span class="ui">Tokens</span></td></tr>
+            <tr><td>2 · Ficha y asiento</td><td>«tenía» recibió «soy una acción» y el asiento 5</td><td><span class="ui">Embed</span></td></tr>
+            <tr><td>3 · Atención</td><td>«tenía» le dio el 60% a «gata» y se sumó 0,60 de «ser vivo»</td><td><span class="ui">Attention 1</span></td></tr>
+            <tr><td>4 · Pensar</td><td>«tenía» combinó todo en «acción hecha por un animal»</td><td><span class="ui">Feed-forward 1</span></td></tr>
+            <tr><td>Vuelta 2</td><td>«hambre» encontró la gata a través de «tenía»</td><td><span class="ui">Attention 2</span>, <span class="ui">Feed-forward 2</span></td></tr>
+            <tr><td>5 · Respuesta</td><td>«¿Quién tenía hambre?» → «gata»</td><td><span class="ui">Pool</span>, <span class="ui">Answer</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Esa es la receta entera, hecha a mano. La red de la app hace exactamente esto, con
+        fichas de 64 números en lugar de 4 y con puntajes que aprende sola en vez de los
+        que inventamos nosotros. Ahora sí, el <a href="#transformer">capítulo 10</a> te
+        está esperando.
+      </p>
 
       <div class="card">
         <h4>Todo el capítulo en cinco frases</h4>
